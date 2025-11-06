@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "483409885225",
+    "project_id": "meetbank-42b78",
+    "storage_bucket": "meetbank-42b78.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:483409885225:android:d3b879461677acd291c438",
+        "android_client_info": {
+          "package_name": "com.wib.meetbank"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "483409885225-epbnj2lsk86coqvsd7cv4sil7avm7u49.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBKq6x2vtFL1lQ3nlF0fz5tt9urcGuf1hU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "483409885225-epbnj2lsk86coqvsd7cv4sil7avm7u49.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
