@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:meetbank/auth_service.dart';
@@ -287,40 +289,44 @@ class HomePage extends StatelessWidget {
               const SizedBox(height: 16),
               SizedBox(
                 height: 220,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: 3,
-                  itemBuilder: (context, index) {
-                    return Container(
-                      width: MediaQuery.of(context).size.width * 0.85,
-                      margin: EdgeInsets.only(
-                        right: 12,
-                        left: index == 0 ? 0 : 0,
-                      ),
-                      child: _buildMeetingCard(
-                        title: index == 0
-                            ? "Board of Directors Q1 Review"
-                            : index == 1
-                            ? "Policy Review Committee"
-                            : "Annual Budget Planning",
-                        date: index == 0
-                            ? "May 15, 2025"
-                            : index == 1
-                            ? "May 16, 2025"
-                            : "May 18, 2025",
-                        time: index == 0
-                            ? "10:00 AM - 12:00 PM"
-                            : index == 1
-                            ? "2:00 PM - 3:30 PM"
-                            : "9:00 AM - 11:00 AM",
-                        attendees: index == 0
-                            ? "12 attendees"
-                            : index == 1
-                            ? "8 attendees"
-                            : "15 attendees",
-                      ),
-                    );
-                  },
+                child: ScrollConfiguration(
+                  behavior: const DragScrollBehavior(),
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: 3,
+                    itemBuilder: (context, index) {
+                      return Container(
+                        width: kIsWeb ? 320 : MediaQuery.of(context).size.width * 0.85,
+                        margin: EdgeInsets.only(
+                          right: 12,
+                          left: index == 0 ? 0 : 0,
+                        ),
+                        child: _buildMeetingCard(
+                          context,
+                          title: index == 0
+                              ? "Board of Directors Q1 Review"
+                              : index == 1
+                              ? "Policy Review Committee"
+                              : "Annual Budget Planning",
+                          date: index == 0
+                              ? "May 15, 2025"
+                              : index == 1
+                              ? "May 16, 2025"
+                              : "May 18, 2025",
+                          time: index == 0
+                              ? "10:00 AM - 12:00 PM"
+                              : index == 1
+                              ? "2:00 PM - 3:30 PM"
+                              : "9:00 AM - 11:00 AM",
+                          attendees: index == 0
+                              ? "12 attendees"
+                              : index == 1
+                              ? "8 attendees"
+                              : "15 attendees",
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ),
               const SizedBox(height: 28),
@@ -518,7 +524,7 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  Widget _buildMeetingCard({
+  Widget _buildMeetingCard(BuildContext context, {
     required String title,
     required String date,
     required String time,
@@ -620,7 +626,14 @@ class HomePage extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: OutlinedButton(
-              onPressed: () {},
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const MeetingsScreen(),
+                  ),
+                );
+              },
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 side: BorderSide(color: Colors.grey[300]!),
@@ -728,4 +741,14 @@ class HomePage extends StatelessWidget {
       ),
     );
   }
+}
+
+class DragScrollBehavior extends MaterialScrollBehavior {
+  const DragScrollBehavior();
+
+  @override
+  Set<PointerDeviceKind> get dragDevices => {
+    PointerDeviceKind.touch,
+    PointerDeviceKind.mouse,
+  };
 }
