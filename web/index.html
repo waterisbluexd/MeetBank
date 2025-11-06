@@ -33,6 +33,24 @@
   <link rel="manifest" href="manifest.json">
 </head>
 <body>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-auth.js"></script>
+  <script>
+    // Your web app's Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyCPp5-fEmWXmJz2cFVxyXdZeFPiGiN70PE",
+      authDomain: "meetbank-42b78.firebaseapp.com",
+      projectId: "meetbank-42b78",
+      storageBucket: "meetbank-42b78.appspot.com",
+      messagingSenderId: "483409885225",
+      appId: "1:483409885225:web:b8be92192e6f0c4391c438",
+      measurementId: "G-86CWZP05PZ"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "483409885225-s8aeosd5rlg1fsv5ilpqcfli58jb425m.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.wib.meetbank",
+            "certificate_hash": "2eb461d57e2eb4709007476fc5f5f0367b51e501"
+          }
+        },
+        {
           "client_id": "483409885225-epbnj2lsk86coqvsd7cv4sil7avm7u49.apps.googleusercontent.com",
           "client_type": 3
         }
@@ -29,6 +37,13 @@
             {
               "client_id": "483409885225-epbnj2lsk86coqvsd7cv4sil7avm7u49.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "483409885225-9buqf4gcv9o39d9vss6jvoscppkq2e8p.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.wib.meetbank"
+              }
             }
           ]
         }
