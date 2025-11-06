@@ -2,21 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart';
 import 'package:meetbank/screens/HomePage.dart';
 import 'package:meetbank/screens/LoginPage.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Set immersive mode only for Android
-  if (!kIsWeb) {
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-  }
-
   if (kIsWeb) {
-    // Web-specific Firebase initialization
+    // Web initialization
     await Firebase.initializeApp(
       options: const FirebaseOptions(
         apiKey: "AIzaSyCPp5-fEmWXmJz2cFVxyXdZeFPiGiN70PE",
