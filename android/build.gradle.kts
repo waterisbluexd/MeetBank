@@ -1,11 +1,12 @@
 plugins {
-  id("com.google.gms.google-services") version "4.3.15" apply false
+    id("com.google.gms.google-services") version "4.3.15" apply false
 }
 
 allprojects {
     repositories {
         google()
         mavenCentral()
+        maven { url = uri("https://sdk.jitsi.org") }
     }
 }
 

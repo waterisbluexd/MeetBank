@@ -6,12 +6,14 @@ import 'package:meetbank/auth_service.dart';
 import 'package:meetbank/models/Events.dart';
 import 'package:meetbank/models/Meeting.dart';
 import 'package:meetbank/models/Policies.dart';
+import 'package:meetbank/screens/add_summary_screen.dart';
 import 'package:meetbank/screens/create_event_screen.dart';
 import 'package:meetbank/screens/create_meeting_screen.dart';
 import 'package:meetbank/screens/events_screen.dart';
 import 'package:meetbank/screens/meetings_screen.dart';
 import 'package:meetbank/screens/policies_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:meetbank/screens/video_conference_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -155,21 +157,16 @@ class _HomePageState extends State<HomePage> {
     if (_isSearching) {
       return const Center(child: CircularProgressIndicator());
     }
-
     if (_searchResults.isEmpty) {
       return const Center(child: Text('No meetings found.'));
     }
-
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: _searchResults.length,
-      itemBuilder: (context, index) {
+    return Column(
+      children: _searchResults.map((meeting) {
         return Padding(
           padding: const EdgeInsets.only(bottom: 12.0),
-          child: _buildMeetingCard(context, meeting: _searchResults[index]),
+          child: _buildMeetingCard(context, meeting: meeting),
         );
-      },
+      }).toList(),
     );
   }
 
@@ -300,6 +297,18 @@ class _HomePageState extends State<HomePage> {
                         builder: (context) => const CreateMeetingScreen(),
                       ),
                     ).then((_) => setState(() {}));
+                  },
+                ),
+                _buildQuickAction(
+                  title: "Start Meeting",
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const VideoConferencePage(),
+                      ),
+                    );
                   },
                 ),
                 _buildQuickAction(
@@ -648,6 +657,7 @@ class _HomePageState extends State<HomePage> {
   Widget _buildMeetingCard(BuildContext context, {required Meeting meeting}) {
     final now = DateTime.now();
     final isOngoing = meeting.startTime.isBefore(now) && meeting.endTime.isAfter(now);
+    final isCompleted = meeting.endTime.isBefore(now);
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -689,7 +699,7 @@ class _HomePageState extends State<HomePage> {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  isOngoing ? 'Ongoing' : meeting.status,
+                  isOngoing ? 'Ongoing' : (isCompleted ? 'Completed' : meeting.status),
                   style: TextStyle(
                     fontSize: 11,
                     color: isOngoing ? Colors.green : const Color(0xFF8CA6DB),
@@ -735,7 +745,7 @@ class _HomePageState extends State<HomePage> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const MeetingsScreen(),
+                    builder: (context) => AddSummaryScreen(meeting: meeting),
                   ),
                 ).then((_) => setState(() {}));
               },

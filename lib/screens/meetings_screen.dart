@@ -7,7 +7,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:meetbank/screens/add_summary_screen.dart';
 
 class MeetingsScreen extends StatefulWidget {
-  const MeetingsScreen({Key? key}) : super(key: key);
+  final int initialTabIndex;
+  const MeetingsScreen({Key? key, this.initialTabIndex = 0}) : super(key: key);
 
   @override
   State<MeetingsScreen> createState() => _MeetingsScreenState();
@@ -22,7 +23,7 @@ class _MeetingsScreenState extends State<MeetingsScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 2, vsync: this, initialIndex: widget.initialTabIndex);
     _searchController.addListener(() {
       setState(() {
         _searchQuery = _searchController.text;
