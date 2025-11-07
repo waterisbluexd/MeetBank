@@ -21,9 +21,60 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  final TextEditingController _searchController = TextEditingController();
+  List<Meeting> _searchResults = [];
+  bool _isSearching = false;
+
   Future<void> _handleRefresh() async {
     setState(() {});
     await Future.delayed(const Duration(seconds: 1));
+  }
+
+  void _performSearch(String query) async {
+    if (query.isEmpty) {
+      setState(() {
+        _searchResults = [];
+        _isSearching = false;
+      });
+      return;
+    }
+
+    setState(() {
+      _isSearching = true;
+    });
+
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('meetings')
+          .where('summaryKeywords', arrayContains: query.toLowerCase())
+          .get();
+
+      setState(() {
+        _searchResults = snapshot.docs
+            .map((doc) => Meeting.fromMap(doc.data()))
+            .toList();
+        _isSearching = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isSearching = false;
+      });
+      // Handle error
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(() {
+      _performSearch(_searchController.text);
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   @override
@@ -43,36 +94,55 @@ class _HomePageState extends State<HomePage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Dashboard Header
-                const Text(
-                  "Dashboard",
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1A1A2E),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 10.0),
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: 'Search meetings by keyword...',
+                      prefixIcon: const Icon(Icons.search),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12.0),
+                        borderSide: BorderSide.none,
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey[200],
+                    ),
                   ),
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  "Welcome back! Here's an overview of your institutional records.",
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                // Stats Cards
-                _buildStatsGrid(),
-                const SizedBox(height: 28),
-
-                // Upcoming Meetings
-                _buildUpcomingMeetings(),
-                const SizedBox(height: 28),
-
-                // Recent Events
-                _buildRecentEvents(),
                 const SizedBox(height: 20),
+
+                if (_searchController.text.isNotEmpty)
+                  _buildSearchResults()
+                else
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        "Dashboard",
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1A1A2E),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        "Welcome back! Here's an overview of your institutional records.",
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      _buildStatsGrid(),
+                      const SizedBox(height: 28),
+                      _buildUpcomingMeetings(),
+                      const SizedBox(height: 28),
+                      _buildRecentEvents(),
+                      const SizedBox(height: 20),
+                    ],
+                  ),
               ],
             ),
           ),
@@ -81,11 +151,32 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  Widget _buildSearchResults() {
+    if (_isSearching) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_searchResults.isEmpty) {
+      return const Center(child: Text('No meetings found.'));
+    }
+
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: _searchResults.length,
+      itemBuilder: (context, index) {
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12.0),
+          child: _buildMeetingCard(context, meeting: _searchResults[index]),
+        );
+      },
+    );
+  }
+
   Widget _buildDrawer(BuildContext context, User user) {
     return Drawer(
       child: Column(
         children: [
-          // Header Section
           Container(
             width: double.infinity,
             padding: const EdgeInsets.fromLTRB(20, 60, 20, 30),
@@ -131,8 +222,6 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
           ),
-
-          // Main Menu Items
           Expanded(
             child: ListView(
               padding: const EdgeInsets.symmetric(vertical: 20),
@@ -232,8 +321,6 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
           ),
-
-          // Logout Button at Bottom
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
@@ -674,8 +761,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // Replace the _buildRecentEvents() method in your HomePage with this updated version:
-
   Widget _buildRecentEvents() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -728,7 +813,6 @@ class _HomePageState extends State<HomePage> {
                 itemBuilder: (context, index) {
                   final event = events[index];
 
-                  // Determine icon based on event type (same logic as EventCard)
                   IconData typeIcon;
                   Color iconColor;
 
@@ -773,8 +857,6 @@ class _HomePageState extends State<HomePage> {
       ],
     );
   }
-}
-// Keep your existing _buildActivityItem method as is
   Widget _buildActivityItem({
     required String title,
     required String time,
@@ -860,6 +942,7 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
+}
 
 class DragScrollBehavior extends MaterialScrollBehavior {
   const DragScrollBehavior();
