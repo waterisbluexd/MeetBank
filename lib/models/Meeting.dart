@@ -1,3 +1,5 @@
+import './ActionItem.dart';
+
 class Meeting {
   final String id;
   final String title;
@@ -8,7 +10,9 @@ class Meeting {
   final String linkType;
   final String createdBy;
   final DateTime createdAt;
-  final String status;
+  String status;
+  String minutes;
+  List<ActionItem> actionItems;
 
   Meeting({
     required this.id,
@@ -21,6 +25,8 @@ class Meeting {
     required this.createdBy,
     required this.createdAt,
     this.status = 'upcoming',
+    this.minutes = '',
+    this.actionItems = const [],
   });
 
   Map<String, dynamic> toMap() {
@@ -35,6 +41,8 @@ class Meeting {
       'createdBy': createdBy,
       'createdAt': createdAt.toIso8601String(),
       'status': status,
+      'minutes': minutes,
+      'actionItems': actionItems.map((item) => item.toMap()).toList(),
     };
   }
 
@@ -50,6 +58,11 @@ class Meeting {
       createdBy: map['createdBy'] ?? '',
       createdAt: DateTime.parse(map['createdAt']),
       status: map['status'] ?? 'upcoming',
+      minutes: map['minutes'] ?? '',
+      actionItems: (map['actionItems'] as List?)
+          ?.map((item) => ActionItem.fromMap(item))
+          .toList() ??
+          [],
     );
   }
 

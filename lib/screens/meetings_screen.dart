@@ -1,32 +1,47 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:meetbank/screens/cards/meeting_card.dart';
-import 'package:meetbank/models/meeting.dart';
-import 'package:uuid/uuid.dart';
+import 'package:meetbank/models/Meeting.dart';
+import 'package:meetbank/screens/create_meeting_screen.dart';
+import 'package:meetbank/screens/meeting_details_screen.dart';
 
 class MeetingsScreen extends StatefulWidget {
-  const MeetingsScreen({Key? key}) : super(key: key);
+  const MeetingsScreen({super.key});
 
   @override
   State<MeetingsScreen> createState() => _MeetingsScreenState();
 }
 
-class _MeetingsScreenState extends State<MeetingsScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-  List<Meeting> meetings = [];
+class _MeetingsScreenState extends State<MeetingsScreen> {
+  final List<Meeting> _meetings = [];
 
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 3, vsync: this);
-    meetings = _getDummyMeetings();
+  void _navigateAndAddMeeting() async {
+    final newMeeting = await Navigator.push<Meeting>(
+      context,
+      MaterialPageRoute(builder: (context) => const CreateMeetingScreen()),
+    );
+
+    if (newMeeting != null) {
+      setState(() {
+        _meetings.add(newMeeting);
+      });
+    }
   }
 
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
+  void _navigateToMeetingDetails(Meeting meeting) async {
+    final updatedMeeting = await Navigator.push<Meeting>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => MeetingDetailsScreen(meeting: meeting),
+      ),
+    );
+
+    if (updatedMeeting != null) {
+      setState(() {
+        final index = _meetings.indexWhere((m) => m.id == updatedMeeting.id);
+        if (index != -1) {
+          _meetings[index] = updatedMeeting;
+        }
+      });
+    }
   }
 
   @override
@@ -44,233 +59,121 @@ class _MeetingsScreenState extends State<MeetingsScreen>
         backgroundColor: Colors.white,
         elevation: 0,
         iconTheme: const IconThemeData(color: Color(0xFF1A1A2E)),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(50),
-          child: Container(
-            color: Colors.white,
-            child: TabBar(
-              controller: _tabController,
-              labelColor: const Color(0xFFB993D6),
-              unselectedLabelColor: Colors.grey[600],
-              indicatorColor: const Color(0xFFB993D6),
-              indicatorWeight: 3,
-              labelStyle: const TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
-              ),
-              tabs: const [
-                Tab(text: "Upcoming"),
-                Tab(text: "Completed"),
-                Tab(text: "All"),
-              ],
-            ),
-          ),
-        ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildMeetingsList("upcoming"),
-          _buildMeetingsList("completed"),
-          _buildMeetingsList("all"),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async {
-          final newMeeting = await Navigator.pushNamed(context, '/create-meeting');
-
-          if (newMeeting != null && newMeeting is Meeting) {
-            setState(() {
-              meetings.add(newMeeting);
-            });
-          }
-        },
+      body: _meetings.isEmpty
+          ? _buildEmptyState()
+          : _buildMeetingList(),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _navigateAndAddMeeting,
         backgroundColor: const Color(0xFFB993D6),
-        icon: const Icon(Icons.add),
-        label: const Text(
-          "New Meeting",
-          style: TextStyle(fontWeight: FontWeight.w600),
-        ),
+        child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }
 
-  Widget _buildMeetingsList(String filter) {
-    final now = DateTime.now();
-    List<Meeting> filtered = [];
-
-    if (filter == "upcoming") {
-      filtered = meetings.where((m) => m.startTime.isAfter(now)).toList();
-    } else if (filter == "completed") {
-      filtered = meetings.where((m) => m.endTime.isBefore(now)).toList();
-    } else {
-      filtered = meetings;
-    }
-
-    // Sort: upcoming meetings first (sorted by date), then completed meetings
-    if (filter == "all") {
-      final upcoming = filtered.where((m) => m.startTime.isAfter(now)).toList();
-      final completed = filtered.where((m) => m.endTime.isBefore(now)).toList();
-
-      upcoming.sort((a, b) => a.startTime.compareTo(b.startTime));
-      completed.sort((a, b) => b.startTime.compareTo(a.startTime)); // Most recent first
-
-      filtered = [...upcoming, ...completed];
-    } else {
-      filtered.sort((a, b) => a.startTime.compareTo(b.startTime));
-    }
-
-    if (filtered.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.event_busy_outlined, size: 80, color: Colors.grey[400]),
-            const SizedBox(height: 16),
-            Text(
-              "No meetings found",
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey[600],
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              "Create your first meeting to get started",
-              style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-            ),
-          ],
-        ),
-      );
-    }
-
-    // Check if running on web for responsive layout
-    if (kIsWeb) {
-      return LayoutBuilder(
-        builder: (context, constraints) {
-          // Calculate number of columns based on screen width
-          int crossAxisCount = 1;
-          if (constraints.maxWidth > 1200) {
-            crossAxisCount = 3;
-          } else if (constraints.maxWidth > 800) {
-            crossAxisCount = 2;
-          }
-
-          return GridView.builder(
-            padding: const EdgeInsets.all(16),
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: crossAxisCount,
-              mainAxisExtent: 380, // Increased height to prevent overflow
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-            ),
-            itemCount: filtered.length,
-            itemBuilder: (context, index) {
-              final meeting = filtered[index];
-              return MeetingCard(
-                id: meeting.id,
-                title: meeting.title,
-                description: meeting.description,
-                startTime: meeting.startTime,
-                endTime: meeting.endTime,
-                meetingLink: meeting.meetingLink,
-                linkType: meeting.linkType,
-                onTap: () {
-                  Navigator.pushNamed(
-                    context,
-                    '/meeting-details',
-                    arguments: meeting.id,
-                  );
-                },
-              );
-            },
-          );
-        },
-      );
-    }
-
-    // Mobile view - keep list layout
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: filtered.length,
-      itemBuilder: (context, index) {
-        final meeting = filtered[index];
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 16),
-          child: MeetingCard(
-            id: meeting.id,
-            title: meeting.title,
-            description: meeting.description,
-            startTime: meeting.startTime,
-            endTime: meeting.endTime,
-            meetingLink: meeting.meetingLink,
-            linkType: meeting.linkType,
-            onTap: () {
-              Navigator.pushNamed(
-                context,
-                '/meeting-details',
-                arguments: meeting.id,
-              );
-            },
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.calendar_today_outlined,
+            size: 80,
+            color: Colors.grey[300],
           ),
-        );
+          const SizedBox(height: 20),
+          const Text(
+            'No Meetings Found',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1A1A2E),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Tap the + button to create your first meeting.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey[600],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMeetingList() {
+    return ListView.builder(
+      padding: const EdgeInsets.all(12),
+      itemCount: _meetings.length,
+      itemBuilder: (context, index) {
+        final meeting = _meetings[index];
+        return _buildMeetingCard(meeting);
       },
     );
   }
 
-  List<Meeting> _getDummyMeetings() {
-    final now = DateTime.now();
-    return [
-      Meeting(
-        id: const Uuid().v4(),
-        title: 'Board of Directors Q1 Review',
-        description:
-        'Quarterly review of company performance, strategic initiatives, and financial results for Q1 2025.',
-        startTime: now.add(const Duration(days: 2, hours: 10)),
-        endTime: now.add(const Duration(days: 2, hours: 12)),
-        meetingLink: 'https://meet.google.com/abc-defg-hij',
-        linkType: 'google_meet',
-        createdBy: 'admin',
-        createdAt: now,
+  Widget _buildMeetingCard(Meeting meeting) {
+    return Card(
+      elevation: 2,
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
       ),
-      Meeting(
-        id: const Uuid().v4(),
-        title: 'Policy Review Committee',
-        description:
-        'Monthly policy review meeting to discuss updates and changes to institutional policies.',
-        startTime: now.add(const Duration(days: 3, hours: 14)),
-        endTime: now.add(const Duration(days: 3, hours: 15, minutes: 30)),
-        meetingLink: 'https://zoom.us/j/1234567890',
-        linkType: 'zoom',
-        createdBy: 'admin',
-        createdAt: now,
+      shadowColor: Colors.black.withOpacity(0.1),
+      child: InkWell(
+        onTap: () => _navigateToMeetingDetails(meeting),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                meeting.title,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1A1A2E),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                meeting.description,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[600],
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '${meeting.getFormattedDate()} • ${meeting.getFormattedTime()}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[700],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const Text(
+                    'View Details',
+                    style: TextStyle(
+                      color: Color(0xFFB993D6),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
-      Meeting(
-        id: const Uuid().v4(),
-        title: 'Annual Budget Planning',
-        description:
-        'Strategic planning session for the 2025-2026 fiscal year budget allocation.',
-        startTime: now.add(const Duration(days: 5, hours: 9)),
-        endTime: now.add(const Duration(days: 5, hours: 11)),
-        meetingLink: 'https://teams.microsoft.com/l/meetup-join/xyz',
-        linkType: 'teams',
-        createdBy: 'admin',
-        createdAt: now,
-      ),
-      Meeting(
-        id: const Uuid().v4(),
-        title: 'Team Sync - Marketing',
-        description:
-        'Weekly marketing team sync to discuss ongoing campaigns and upcoming initiatives.',
-        startTime: now.subtract(const Duration(days: 2, hours: 10)),
-        endTime: now.subtract(const Duration(days: 2, hours: 11)),
-        meetingLink: 'https://meet.google.com/xyz-abcd-efg',
-        linkType: 'google_meet',
-        createdBy: 'admin',
-        createdAt: now,
-        status: 'completed',
-      ),
-    ];
+    );
   }
 }
