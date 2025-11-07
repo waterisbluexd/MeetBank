@@ -1,9 +1,11 @@
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
+import 'package:meetbank/models/Meeting.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:uuid/uuid.dart';
 
@@ -86,6 +88,23 @@ class _MeetingScreenState extends State<MeetingScreen> {
   Future<void> _setupWebRTC() async {
     final meetingRef =
         FirebaseFirestore.instance.collection('meetings').doc(_meetingId);
+
+    final now = DateTime.now();
+    final newMeeting = Meeting(
+      id: _meetingId!,
+      title: "Instant Meeting",
+      description: "Meeting started on ${now.toLocal()}",
+      startTime: now,
+      endTime: now.add(const Duration(hours: 1)),
+      status: "Ongoing",
+      summary: "",
+      summaryKeywords: [],
+      meetingLink: widget.meetingLink,
+      linkType: 'google_meet',
+      createdBy: FirebaseAuth.instance.currentUser!.uid,
+      createdAt: now,
+    );
+    await meetingRef.set(newMeeting.toMap());
 
     await _getUserMedia();
     _listenForSignaling(meetingRef);

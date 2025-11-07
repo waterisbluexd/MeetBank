@@ -7,7 +7,7 @@ import 'package:meetbank/secrets.dart';
 class AddSummaryScreen extends StatefulWidget {
   final Meeting meeting;
 
-  const AddSummaryScreen({Key? key, required this.meeting}) : super(key: key);
+  const AddSummaryScreen({super.key, required this.meeting});
 
   @override
   State<AddSummaryScreen> createState() => _AddSummaryScreenState();
@@ -33,16 +33,7 @@ class _AddSummaryScreenState extends State<AddSummaryScreen> {
     super.dispose();
   }
 
-  Future<void> _generateKeywords() async {
-    if (_summaryController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter a summary first.'),
-          backgroundColor: Colors.orange,
-        ),
-      );
-      return;
-    }
+  Future<void> _generateSummaryAndKeywords() async {
     setState(() {
       _isGenerating = true;
     });
@@ -52,18 +43,64 @@ class _AddSummaryScreenState extends State<AddSummaryScreen> {
         model: 'gemini-2.5-flash',
         apiKey: googleApiKey,
       );
-      final prompt = 'Generate 5 to 7 keywords for the following meeting summary, separated by commas: ${_summaryController.text}';
+
+      final bool useDescription = _summaryController.text.trim().isEmpty;
+      final String sourceText =
+          useDescription ? widget.meeting.description : _summaryController.text;
+      final String sourceLabel =
+          useDescription ? 'meeting description' : 'user notes';
+
+      final prompt =
+          '''Based on the following $sourceLabel, create a concise summary with 5-6 bullet points and also provide 5 to 7 relevant keywords separated by commas.
+
+$sourceLabel:
+$sourceText
+
+Return ONLY the summary and keywords in the following format:
+
+Summary:
+* Bullet point 1
+* Bullet point 2
+* Bullet point 3
+* Bullet point 4
+* Bullet point 5
+
+Keywords:
+keyword1, keyword2, keyword3, keyword4, keyword5''';
       final content = [Content.text(prompt)];
       final response = await model.generateContent(content);
 
       if (response.text != null) {
-        _summaryKeywordsController.text = response.text!;
+        final responseText = response.text!;
+        final summaryMarker = 'Summary:';
+        final keywordsMarker = 'Keywords:';
+
+        final summaryIndex = responseText.indexOf(summaryMarker);
+        final keywordsIndex = responseText.indexOf(keywordsMarker);
+
+        if (summaryIndex != -1 && keywordsIndex != -1) {
+          // Summary is between "Summary:" and "Keywords:"
+          String summary = responseText
+              .substring(summaryIndex + summaryMarker.length, keywordsIndex)
+              .trim();
+          _summaryController.text = summary;
+
+          // Keywords are after "Keywords:"
+          String keywords =
+              responseText.substring(keywordsIndex + keywordsMarker.length).trim();
+          _summaryKeywordsController.text = keywords;
+        } else {
+          // Fallback if markers are not found
+          _summaryController.text =
+              responseText; // Put the whole response in the summary.
+          _summaryKeywordsController.text = ''; // Clear keywords
+        }
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error generating keywords: $e'),
+            content: Text('Error generating summary: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -125,6 +162,7 @@ class _AddSummaryScreenState extends State<AddSummaryScreen> {
               maxLines: 10,
               decoration: const InputDecoration(
                 labelText: 'Meeting Summary',
+                hintText: 'Enter any notes here to help generate the summary.',
                 border: OutlineInputBorder(),
               ),
             ),
@@ -132,8 +170,8 @@ class _AddSummaryScreenState extends State<AddSummaryScreen> {
             TextField(
               controller: _summaryKeywordsController,
               decoration: const InputDecoration(
-                labelText: 'Generative summary keywords',
-                hintText: 'Enter keywords separated by commas',
+                labelText: 'Keywords',
+                hintText: 'Keywords will be generated here.',
                 border: OutlineInputBorder(),
               ),
             ),
@@ -145,8 +183,8 @@ class _AddSummaryScreenState extends State<AddSummaryScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   ElevatedButton(
-                    onPressed: _generateKeywords,
-                    child: const Text('Generate Keywords'),
+                    onPressed: _generateSummaryAndKeywords,
+                    child: const Text('Generate Summary & Keywords'),
                   ),
                   ElevatedButton(
                     onPressed: _saveSummary,
