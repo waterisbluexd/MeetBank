@@ -7,6 +7,7 @@ import 'package:meetbank/screens/create_event_screen.dart';
 import 'package:meetbank/screens/create_meeting_screen.dart';
 import 'package:meetbank/screens/events_screen.dart';
 import 'package:meetbank/screens/meetings_screen.dart';
+import 'package:meetbank/screens/policies_screen.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -121,7 +122,15 @@ class HomePage extends StatelessWidget {
                     _buildMenuItem(
                       icon: Icons.description_outlined,
                       title: "Policies",
-                      onTap: () {},
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const PoliciesScreen(),
+                          ),
+                        );
+                      },
                     ),
                     _buildMenuItem(
                       icon: Icons.bar_chart_outlined,
