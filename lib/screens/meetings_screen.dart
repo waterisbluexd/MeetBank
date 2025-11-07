@@ -28,6 +28,25 @@ class _MeetingsScreenState extends State<MeetingsScreen>
     super.dispose();
   }
 
+  Future<void> _deleteMeeting(String meetingId) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('meetings')
+          .doc(meetingId)
+          .delete();
+    } catch (e) {
+      // Handle errors, maybe show a snackbar
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error deleting meeting: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -178,6 +197,7 @@ class _MeetingsScreenState extends State<MeetingsScreen>
                 meetingLink: meeting.meetingLink,
                 linkType: meeting.linkType,
                 onTap: () {},
+                onDelete: () => _deleteMeeting(meeting.id),
               );
             },
           );
@@ -201,6 +221,7 @@ class _MeetingsScreenState extends State<MeetingsScreen>
             meetingLink: meeting.meetingLink,
             linkType: meeting.linkType,
             onTap: () {},
+            onDelete: () => _deleteMeeting(meeting.id),
           ),
         );
       },

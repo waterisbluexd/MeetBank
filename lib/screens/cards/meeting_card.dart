@@ -11,6 +11,7 @@ class MeetingCard extends StatelessWidget {
   final String meetingLink;
   final String linkType;
   final VoidCallback? onTap;
+  final VoidCallback? onDelete;
 
   const MeetingCard({
     Key? key,
@@ -22,6 +23,7 @@ class MeetingCard extends StatelessWidget {
     required this.meetingLink,
     required this.linkType,
     this.onTap,
+    this.onDelete,
   }) : super(key: key);
 
   @override
@@ -241,6 +243,25 @@ class MeetingCard extends StatelessWidget {
                     color: Color(0xFF1A1A2E),
                   ),
                 ),
+                const SizedBox(width: 10),
+                OutlinedButton(
+                  onPressed: () => _showDeleteConfirmationDialog(context),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    side: BorderSide(color: Colors.red[300]!),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  child: const Icon(
+                    Icons.delete_outline,
+                    size: 20,
+                    color: Colors.red,
+                  ),
+                ),
               ],
             ),
           ],
@@ -385,6 +406,40 @@ class MeetingCard extends StatelessWidget {
         ),
         duration: const Duration(seconds: 2),
       ),
+    );
+  }
+
+  Future<void> _showDeleteConfirmationDialog(BuildContext context) async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false, // user must tap button!
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Delete Meeting'),
+          content: const SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                Text('Are you sure you want to delete this meeting?'),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text('Delete'),
+              onPressed: () {
+                onDelete?.call();
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 }
