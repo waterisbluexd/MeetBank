@@ -7,7 +7,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class CreateEventScreen extends StatefulWidget {
-  const CreateEventScreen({super.key});
+  final Event? event;
+
+  const CreateEventScreen({super.key, this.event});
 
   @override
   State<CreateEventScreen> createState() => _CreateEventScreenState();
@@ -22,8 +24,23 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   bool _isSaving = false;
 
   DateTime? startTime;
-  DateTime? endTime; // Added endTime
+  DateTime? endTime;
   String selectedEventType = 'conference';
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.event != null) {
+      final event = widget.event!;
+      titleController.text = event.title;
+      descriptionController.text = event.description;
+      venueController.text = event.venue;
+      startTime = event.startTime;
+      endTime = event.endTime;
+      selectedEventType = event.eventType;
+      documentUrl = event.documentUrl;
+    }
+  }
 
   final List<Map<String, dynamic>> eventTypes = [
     {'value': 'conference', 'label': 'Conference', 'icon': Icons.business_center},
@@ -33,7 +50,6 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     {'value': 'training', 'label': 'Training', 'icon': Icons.model_training},
   ];
 
-  // Modified to handle both start and end time
   Future<void> _pickDateTime(bool isStart) async {
     final now = DateTime.now();
     final pickedDate = await showDatePicker(
@@ -102,7 +118,6 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   }
 
   Future<void> _saveEvent() async {
-    // Added validation for endTime
     if (!_formKey.currentState!.validate() || startTime == null || endTime == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -141,30 +156,29 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
       return;
     }
 
-    // Added endTime to the Event object
-    final event = Event(
-      id: const Uuid().v4(),
+    final eventData = Event(
+      id: widget.event?.id ?? const Uuid().v4(),
       title: titleController.text.trim(),
       description: descriptionController.text.trim(),
       startTime: startTime!,
       endTime: endTime!,
       venue: venueController.text.trim(),
       eventType: selectedEventType,
-      organizer: user.displayName ?? 'Admin',
-      createdAt: DateTime.now(),
+      organizer: widget.event?.organizer ?? user.displayName ?? 'Admin',
+      createdAt: widget.event?.createdAt ?? DateTime.now(),
       documentUrl: documentUrl,
-      createdBy: user.uid,
+      createdBy: widget.event?.createdBy ?? user.uid,
     );
 
     try {
       await FirebaseFirestore.instance
           .collection('events')
-          .doc(event.id)
-          .set(event.toMap());
+          .doc(eventData.id)
+          .set(eventData.toMap(), SetOptions(merge: true));
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Event created successfully!'),
+        SnackBar(
+          content: Text(widget.event == null ? 'Event created successfully!' : 'Event updated successfully!'),
           backgroundColor: Colors.green,
         ),
       );
@@ -195,13 +209,14 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   @override
   Widget build(BuildContext context) {
     final isWeb = MediaQuery.of(context).size.width > 600;
+    final isEditing = widget.event != null;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
-        title: const Text(
-          "Create New Event",
-          style: TextStyle(fontWeight: FontWeight.w600),
+        title: Text(
+          isEditing ? "Edit Event" : "Create New Event",
+          style: const TextStyle(fontWeight: FontWeight.w600),
         ),
         backgroundColor: Colors.white,
         foregroundColor: const Color(0xFF1A1A2E),
@@ -253,10 +268,9 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                       title: 'Start Time',
                       dateTime: startTime,
                       icon: Icons.calendar_today_rounded,
-                      onTap: () => _pickDateTime(true), // Point to the modified picker
+                      onTap: () => _pickDateTime(true),
                     ),
                     const SizedBox(height: 12),
-                    // Added the End Time picker
                     _buildDateTimeCard(
                       title: 'End Time',
                       dateTime: endTime,
@@ -286,9 +300,9 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                           strokeWidth: 3,
                         ),
                       )
-                          : const Text(
-                        "Create Event",
-                        style: TextStyle(
+                          : Text(
+                        isEditing ? "Save Changes" : "Create Event",
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                           letterSpacing: 0.5,
