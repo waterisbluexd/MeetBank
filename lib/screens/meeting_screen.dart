@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
+import 'package:speech_to_text/speech_to_text.dart';
 import 'package:uuid/uuid.dart';
 
 class MeetingScreen extends StatefulWidget {
@@ -36,6 +37,10 @@ class _MeetingScreenState extends State<MeetingScreen> {
   double? _localViewTop;
   double? _localViewLeft;
 
+  final SpeechToText _speechToText = SpeechToText();
+  bool _isListening = false;
+  String _lastWords = "";
+  
   @override
   void initState() {
     super.initState();
@@ -45,6 +50,12 @@ class _MeetingScreenState extends State<MeetingScreen> {
     // Enable speakerphone
     Helper.setSpeakerphoneOn(true);
     _setupWebRTC();
+    _initSpeech();
+  }
+  
+  void _initSpeech() async {
+    await _speechToText.initialize();
+    setState(() {});
   }
   
   @override
@@ -264,6 +275,34 @@ class _MeetingScreenState extends State<MeetingScreen> {
     }
   }
 
+  void _startListening() {
+    _speechToText.listen(
+      onResult: (result) {
+        setState(() {
+          _lastWords = result.recognizedWords;
+        });
+      },
+    );
+    setState(() {
+      _isListening = true;
+    });
+  }
+
+  void _stopListening() {
+    _speechToText.stop();
+    setState(() {
+      _isListening = false;
+    });
+  }
+  
+  void _toggleListening() {
+    if (_isListening) {
+      _stopListening();
+    } else {
+      _startListening();
+    }
+  }
+
  @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -332,6 +371,26 @@ class _MeetingScreenState extends State<MeetingScreen> {
               ),
             ),
           ),
+           Positioned(
+            bottom: 100.0,
+            left: 20,
+            right: 20,
+            child: Container(
+              padding: const EdgeInsets.all(12.0),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.6),
+                borderRadius: BorderRadius.circular(12.0),
+              ),
+              child: Text(
+                _lastWords,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16.0,
+                ),
+              ),
+            ),
+          ),
           Positioned(
             bottom: 20.0,
             left: 0,
@@ -339,6 +398,12 @@ class _MeetingScreenState extends State<MeetingScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: <Widget>[
+                FloatingActionButton(
+                  heroTag: 'transcript',
+                  backgroundColor: _isListening ? Colors.blue : Colors.white,
+                  onPressed: _toggleListening,
+                  child: Icon(_isListening ? Icons.mic : Icons.mic_none, color: _isListening ? Colors.white : Colors.black),
+                ),
                 FloatingActionButton(
                   heroTag: 'mute',
                   backgroundColor: _isMuted ? Colors.red : Colors.white,
