@@ -31,18 +31,8 @@ class _HomePageState extends State<HomePage> {
     final user = FirebaseAuth.instance.currentUser!;
 
     return Scaffold(
-      backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text(
-          "MeetBank",
-          style: TextStyle(
-            color: Color(0xFF1A1A2E),
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Color(0xFF1A1A2E)),
+        title: const Text("MeetBank"),
       ),
       drawer: _buildDrawer(context, user),
       body: RefreshIndicator(
@@ -93,194 +83,191 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildDrawer(BuildContext context, User user) {
     return Drawer(
-      child: Container(
-        color: Colors.white,
-        child: Column(
-          children: [
-            // Header Section
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(20, 60, 20, 30),
-              decoration: BoxDecoration(
-                color: Colors.grey[50],
-              ),
-              child: Column(
-                children: [
-                  CircleAvatar(
-                    radius: 40,
-                    backgroundColor: const Color(0xFFB993D6),
-                    backgroundImage: user.photoURL != null
-                        ? NetworkImage(user.photoURL!)
-                        : null,
-                    child: user.photoURL == null
-                        ? Text(
-                      (user.displayName ?? "U")[0].toUpperCase(),
-                      style: const TextStyle(
-                        fontSize: 32,
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    )
-                        : null,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    user.displayName ?? "User",
+      child: Column(
+        children: [
+          // Header Section
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(20, 60, 20, 30),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+            ),
+            child: Column(
+              children: [
+                CircleAvatar(
+                  radius: 40,
+                  backgroundColor: const Color(0xFFB993D6),
+                  backgroundImage: user.photoURL != null
+                      ? NetworkImage(user.photoURL!)
+                      : null,
+                  child: user.photoURL == null
+                      ? Text(
+                    (user.displayName ?? "U")[0].toUpperCase(),
                     style: const TextStyle(
-                      fontSize: 18,
+                      fontSize: 32,
+                      color: Colors.white,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF1A1A2E),
                     ),
+                  )
+                      : null,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  user.displayName ?? "User",
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1A1A2E),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    user.email ?? "",
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[600],
-                    ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  user.email ?? "",
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[600],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
+          ),
 
-            // Main Menu Items
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.symmetric(vertical: 20),
-                children: [
-                  _buildMenuItem(
-                    icon: Icons.dashboard_outlined,
-                    title: "Dashboard",
-                    isSelected: true,
-                    onTap: () {},
-                  ),
-                  _buildMenuItem(
-                    icon: Icons.calendar_today_outlined,
-                    title: "Meetings",
-                    onTap: () {
-                      Navigator.pop(context); // Close the drawer first
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const MeetingsScreen(),
-                        ),
-                      ).then((_) => setState(() {}));
-                    },
-                  ),
-                  _buildMenuItem(
-                    icon: Icons.event_note_outlined,
-                    title: "Events",
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const EventsScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildMenuItem(
-                    icon: Icons.description_outlined,
-                    title: "Policies",
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const PoliciesScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 20),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Divider(color: Colors.grey[300]),
-                  ),
-                  const SizedBox(height: 8),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Text(
-                      "QUICK ACTIONS",
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.grey[600],
-                        letterSpacing: 0.5,
+          // Main Menu Items
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              children: [
+                _buildMenuItem(
+                  icon: Icons.dashboard_outlined,
+                  title: "Dashboard",
+                  isSelected: true,
+                  onTap: () {},
+                ),
+                _buildMenuItem(
+                  icon: Icons.calendar_today_outlined,
+                  title: "Meetings",
+                  onTap: () {
+                    Navigator.pop(context); // Close the drawer first
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const MeetingsScreen(),
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  _buildQuickAction(
-                    title: "Create Meeting",
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const CreateMeetingScreen(),
-                        ),
-                      ).then((_) => setState(() {}));
-                    },
-                  ),
-                  _buildQuickAction(
-                    title: "Add Event",
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const CreateEventScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildQuickAction(
-                    title: "Upload Policy",
-                    onTap: () {},
-                  ),
-                ],
-              ),
-            ),
-
-            // Logout Button at Bottom
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                border: Border(
-                  top: BorderSide(color: Colors.grey[200]!),
-                ),
-              ),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    AuthService().signOut();
+                    ).then((_) => setState(() {}));
                   },
-                  icon: const Icon(Icons.logout, size: 20),
-                  label: const Text(
-                    "Logout",
+                ),
+                _buildMenuItem(
+                  icon: Icons.event_note_outlined,
+                  title: "Events",
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const EventsScreen(),
+                      ),
+                    );
+                  },
+                ),
+                _buildMenuItem(
+                  icon: Icons.description_outlined,
+                  title: "Policies",
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const PoliciesScreen(),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 20),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Divider(color: Colors.grey[300]),
+                ),
+                const SizedBox(height: 8),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Text(
+                    "QUICK ACTIONS",
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: 12,
                       fontWeight: FontWeight.w600,
+                      color: Colors.grey[600],
+                      letterSpacing: 0.5,
                     ),
                   ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red[50],
-                    foregroundColor: Colors.red[700],
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                ),
+                const SizedBox(height: 8),
+                _buildQuickAction(
+                  title: "Create Meeting",
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const CreateMeetingScreen(),
+                      ),
+                    ).then((_) => setState(() {}));
+                  },
+                ),
+                _buildQuickAction(
+                  title: "Add Event",
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const CreateEventScreen(),
+                      ),
+                    );
+                  },
+                ),
+                _buildQuickAction(
+                  title: "Upload Policy",
+                  onTap: () {},
+                ),
+              ],
+            ),
+          ),
+
+          // Logout Button at Bottom
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              border: Border(
+                top: BorderSide(color: Colors.grey[200]!),
+              ),
+            ),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  AuthService().signOut();
+                },
+                icon: const Icon(Icons.logout, size: 20),
+                label: const Text(
+                  "Logout",
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red[50],
+                  foregroundColor: Colors.red[700],
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

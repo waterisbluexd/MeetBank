@@ -31,8 +31,22 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'MeetBank',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFFB993D6),
+          background: const Color(0xFFFEF7FF), // A light pinkish-white
+        ),
+        scaffoldBackgroundColor: const Color(0xFFFEF7FF), // Pinkish-white background
         useMaterial3: true,
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          iconTheme: IconThemeData(color: Color(0xFF1A1A2E)),
+          titleTextStyle: TextStyle(
+            color: Color(0xFF1A1A2E),
+            fontWeight: FontWeight.bold,
+            fontSize: 20
+          ),
+        ),
       ),
       home: const AuthWrapper(),
       routes: {

@@ -68,22 +68,12 @@ class _MeetingsScreenState extends State<MeetingsScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text(
-          "Meetings",
-          style: TextStyle(
-            color: Color(0xFF1A1A2E),
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Color(0xFF1A1A2E)),
+        title: const Text("Meetings"),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(100),
           child: Container(
-            color: Colors.white,
+            color: Theme.of(context).scaffoldBackgroundColor,
             child: Column(
               children: [
                 Padding(
@@ -98,20 +88,12 @@ class _MeetingsScreenState extends State<MeetingsScreen>
                         borderSide: BorderSide.none,
                       ),
                       filled: true,
-                      fillColor: Colors.grey[100],
+                      fillColor: Theme.of(context).colorScheme.background,
                     ),
                   ),
                 ),
                 TabBar(
                   controller: _tabController,
-                  labelColor: const Color(0xFFB993D6),
-                  unselectedLabelColor: Colors.grey[600],
-                  indicatorColor: const Color(0xFFB993D6),
-                  indicatorWeight: 3,
-                  labelStyle: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                  ),
                   tabs: const [
                     Tab(text: "Upcoming"),
                     Tab(text: "Completed"),
@@ -149,12 +131,8 @@ class _MeetingsScreenState extends State<MeetingsScreen>
         onPressed: () {
           Navigator.push(context, MaterialPageRoute(builder: (context) => const CreateMeetingScreen()));
         },
-        backgroundColor: const Color(0xFFB993D6),
-        icon: const Icon(Icons.add, color: Colors.white,),
-        label: const Text(
-          "New Meeting",
-          style: TextStyle(fontWeight: FontWeight.w600, color: Colors.white),
-        ),
+        label: const Text("New Meeting"),
+        icon: const Icon(Icons.add),
       ),
     );
   }

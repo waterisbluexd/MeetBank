@@ -95,18 +95,8 @@ class _EventsScreenState extends State<EventsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text(
-          "Events",
-          style: TextStyle(
-            color: Color(0xFF1A1A2E),
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Color(0xFF1A1A2E)),
+        title: const Text("Events"),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(50),
           child: Padding(
@@ -121,7 +111,7 @@ class _EventsScreenState extends State<EventsScreen> {
                   borderSide: BorderSide.none,
                 ),
                 filled: true,
-                fillColor: Colors.grey[100],
+                fillColor: Theme.of(context).colorScheme.background,
               ),
             ),
           ),
@@ -151,15 +141,8 @@ class _EventsScreenState extends State<EventsScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _navigateAndAddEvent,
-        backgroundColor: const Color(0xFFB993D6),
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text(
-          "New Event",
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
-          ),
-        ),
+        label: const Text("New Event"),
+        icon: const Icon(Icons.add),
       ),
     );
   }
