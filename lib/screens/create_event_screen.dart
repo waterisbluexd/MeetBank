@@ -454,7 +454,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
       onTap: _pickDocument,
       borderRadius: BorderRadius.circular(12),
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
@@ -475,7 +475,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: const Color(0xFFB993D6).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(10),
@@ -483,15 +483,15 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
               child: const Icon(
                 Icons.attach_file,
                 color: Color(0xFFB993D6),
-                size: 24,
+                size: 28,
               ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 20),
             Expanded(
               child: Text(
                 documentUrl ?? 'Attach a document',
                 style: TextStyle(
-                  fontSize: 15,
+                  fontSize: 16,
                   fontWeight: FontWeight.w600,
                   color: documentUrl != null
                       ? const Color(0xFF1A1A2E)

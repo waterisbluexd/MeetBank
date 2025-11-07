@@ -3,6 +3,8 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:meetbank/auth_service.dart';
+import 'package:meetbank/screens/create_event_screen.dart';
+import 'package:meetbank/screens/create_meeting_screen.dart';
 import 'package:meetbank/screens/events_screen.dart';
 import 'package:meetbank/screens/meetings_screen.dart';
 
@@ -147,11 +149,27 @@ class HomePage extends StatelessWidget {
                     const SizedBox(height: 8),
                     _buildQuickAction(
                       title: "Create Meeting",
-                      onTap: () {},
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const CreateMeetingScreen(),
+                          ),
+                        );
+                      },
                     ),
                     _buildQuickAction(
                       title: "Add Event",
-                      onTap: () {},
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const CreateEventScreen(),
+                          ),
+                        );
+                      },
                     ),
                     _buildQuickAction(
                       title: "Upload Policy",
@@ -611,7 +629,7 @@ class HomePage extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          const Spacer(),
           SizedBox(
             width: double.infinity,
             child: OutlinedButton(
@@ -624,7 +642,7 @@ class HomePage extends StatelessWidget {
                 );
               },
               style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 10),
+                padding: const EdgeInsets.symmetric(vertical: 12),
                 side: BorderSide(color: Colors.grey[300]!),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
@@ -635,7 +653,7 @@ class HomePage extends StatelessWidget {
                 style: TextStyle(
                   color: Color(0xFF1A1A2E),
                   fontWeight: FontWeight.w600,
-                  fontSize: 13,
+                  fontSize: 14,
                 ),
               ),
             ),
