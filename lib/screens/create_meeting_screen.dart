@@ -16,7 +16,6 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
   final _formKey = GlobalKey<FormState>();
   final titleController = TextEditingController();
   final descriptionController = TextEditingController();
-  final linkController = TextEditingController();
 
   DateTime? startTime;
   DateTime? endTime;
@@ -81,7 +80,9 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
   }
 
   Future<void> _saveMeeting() async {
-    if (!_formKey.currentState!.validate() || startTime == null || endTime == null) {
+    if (!_formKey.currentState!.validate() ||
+        startTime == null ||
+        endTime == null) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -111,14 +112,17 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
       return;
     }
 
+    final meetingId = const Uuid().v4();
+    final meetingLink = 'meetbank://meetings/$meetingId';
+
     final meeting = Meeting(
-      id: const Uuid().v4(),
+      id: meetingId,
       title: titleController.text.trim(),
       description: descriptionController.text.trim(),
       startTime: startTime!,
       endTime: endTime!,
-      meetingLink: linkController.text.trim(),
-      linkType: 'google_meet',
+      meetingLink: meetingLink,
+      linkType: 'meetbank',
       createdBy: user.uid,
       createdAt: DateTime.now(),
     );
@@ -158,7 +162,6 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
   void dispose() {
     titleController.dispose();
     descriptionController.dispose();
-    linkController.dispose();
     super.dispose();
   }
 
@@ -194,22 +197,16 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
                       label: 'Meeting Title',
                       hint: 'e.g., Team Standup',
                       icon: Icons.title_rounded,
-                      validator: (v) => v == null || v.isEmpty ? 'Title is required' : null,
+                      validator: (v) =>
+                          v == null || v.isEmpty ? 'Title is required' : null,
                     ),
                     const SizedBox(height: 16),
                     _buildTextField(
                       controller: descriptionController,
                       label: 'Description',
-                      hint: 'What\'s this meeting about?',
+                      hint: "What's this meeting about?",
                       icon: Icons.description_outlined,
                       maxLines: 4,
-                    ),
-                    const SizedBox(height: 16),
-                    _buildTextField(
-                      controller: linkController,
-                      label: 'Meeting Link',
-                      hint: 'https://meet.google.com/...',
-                      icon: Icons.link_rounded,
                     ),
                     const SizedBox(height: 24),
                     _buildDateTimeCard(
@@ -272,6 +269,7 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
     required IconData icon,
     int maxLines = 1,
     String? Function(String?)? validator,
+    bool readOnly = false,
   }) {
     return Container(
       decoration: BoxDecoration(
@@ -287,6 +285,7 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
       ),
       child: TextFormField(
         controller: controller,
+        readOnly: readOnly,
         decoration: InputDecoration(
           labelText: label,
           hintText: hint,
