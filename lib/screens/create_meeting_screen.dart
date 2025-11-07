@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:meetbank/models/meeting.dart';
+import 'package:meetbank/models/Meeting.dart';
 import 'package:uuid/uuid.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -81,9 +81,8 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
   }
 
   Future<void> _saveMeeting() async {
-    if (!_formKey.currentState!.validate() ||
-        startTime == null ||
-        endTime == null) {
+    if (!_formKey.currentState!.validate() || startTime == null || endTime == null) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please fill all required fields'),
@@ -99,6 +98,7 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
 
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('You must be logged in to create a meeting.'),
@@ -129,6 +129,7 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
           .doc(meeting.id)
           .set(meeting.toMap());
 
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Meeting created successfully!'),
@@ -136,8 +137,10 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
         ),
       );
 
+      if (!mounted) return;
       Navigator.pop(context);
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to save meeting: $e'),
@@ -191,8 +194,7 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
                       label: 'Meeting Title',
                       hint: 'e.g., Team Standup',
                       icon: Icons.title_rounded,
-                      validator: (v) =>
-                      v == null || v.isEmpty ? 'Title is required' : null,
+                      validator: (v) => v == null || v.isEmpty ? 'Title is required' : null,
                     ),
                     const SizedBox(height: 16),
                     _buildTextField(
@@ -237,21 +239,21 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
                       ),
                       child: _isSaving
                           ? const SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 3,
-                        ),
-                      )
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 3,
+                              ),
+                            )
                           : const Text(
-                        "Create Meeting",
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
+                              "Create Meeting",
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
                     ),
                   ],
                 ),

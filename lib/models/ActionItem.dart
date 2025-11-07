@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class ActionItem {
   final String id;
   final String taskDescription;
@@ -18,7 +20,7 @@ class ActionItem {
       'id': id,
       'taskDescription': taskDescription,
       'assignedTo': assignedTo,
-      'dueDate': dueDate.toIso8601String(),
+      'dueDate': Timestamp.fromDate(dueDate),
       'isCompleted': isCompleted,
     };
   }
@@ -28,8 +30,18 @@ class ActionItem {
       id: map['id'] ?? '',
       taskDescription: map['taskDescription'] ?? '',
       assignedTo: map['assignedTo'] ?? '',
-      dueDate: DateTime.parse(map['dueDate']),
+      dueDate: _parseDate(map['dueDate']),
       isCompleted: map['isCompleted'] ?? false,
     );
+  }
+
+  static DateTime _parseDate(dynamic date) {
+    if (date is Timestamp) {
+      return date.toDate();
+    } else if (date is String) {
+      return DateTime.parse(date);
+    } else {
+      return DateTime.now();
+    }
   }
 }

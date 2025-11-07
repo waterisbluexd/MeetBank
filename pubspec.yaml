@@ -21,6 +21,7 @@ dependencies:
   intl: ^0.18.0
   image_picker: ^1.0.4
   file_picker: ^8.0.0+1
+  google_generative_ai: ^0.4.7
 
 dev_dependencies:
   flutter_test:

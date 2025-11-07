@@ -10,15 +10,10 @@ import 'package:meetbank/screens/create_meeting_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Initialize Firebase using the generated firebase_options.dart
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-
-  // Set immersive mode for a full-screen experience
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-
   runApp(const MyApp());
 }
 
@@ -33,9 +28,9 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color(0xFFB993D6),
-          background: const Color(0xFFFEF7FF), // A light pinkish-white
+          background: const Color(0xFFFEF7FF),
         ),
-        scaffoldBackgroundColor: const Color(0xFFFEF7FF), // Pinkish-white background
+        scaffoldBackgroundColor: const Color(0xFFFEF7FF),
         useMaterial3: true,
         appBarTheme: const AppBarTheme(
           backgroundColor: Colors.transparent,
