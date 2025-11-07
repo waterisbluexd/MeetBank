@@ -194,11 +194,6 @@ class _HomePageState extends State<HomePage> {
                       );
                     },
                   ),
-                  _buildMenuItem(
-                    icon: Icons.bar_chart_outlined,
-                    title: "Reports",
-                    onTap: () {},
-                  ),
                   const SizedBox(height: 20),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
