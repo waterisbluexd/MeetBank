@@ -52,9 +52,8 @@ class _HomePageState extends State<HomePage> {
           .get();
 
       setState(() {
-        _searchResults = snapshot.docs
-            .map((doc) => Meeting.fromMap(doc.data()))
-            .toList();
+        _searchResults =
+            snapshot.docs.map((doc) => Meeting.fromMap(doc.data())).toList();
         _isSearching = false;
       });
     } catch (e) {
@@ -113,7 +112,6 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
                 const SizedBox(height: 20),
-
                 if (_searchController.text.isNotEmpty)
                   _buildSearchResults()
                 else
@@ -185,18 +183,17 @@ class _HomePageState extends State<HomePage> {
                 CircleAvatar(
                   radius: 40,
                   backgroundColor: const Color(0xFFB993D6),
-                  backgroundImage: user.photoURL != null
-                      ? NetworkImage(user.photoURL!)
-                      : null,
+                  backgroundImage:
+                      user.photoURL != null ? NetworkImage(user.photoURL!) : null,
                   child: user.photoURL == null
                       ? Text(
-                    (user.displayName ?? "U")[0].toUpperCase(),
-                    style: const TextStyle(
-                      fontSize: 32,
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  )
+                          (user.displayName ?? "U")[0].toUpperCase(),
+                          style: const TextStyle(
+                            fontSize: 32,
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        )
                       : null,
                 ),
                 const SizedBox(height: 16),
@@ -308,7 +305,8 @@ class _HomePageState extends State<HomePage> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => MeetingScreen(meetingLink: meetingLink),
+                        builder: (context) =>
+                            MeetingScreen(meetingLink: meetingLink),
                       ),
                     );
                   },
@@ -391,8 +389,9 @@ class _HomePageState extends State<HomePage> {
         title: Text(
           title,
           style: TextStyle(
-            color: isSelected ? const Color(0xFFB993D6) : const Color(
-                0xFF1A1A2E),
+            color: isSelected
+                ? const Color(0xFFB993D6)
+                : const Color(0xFF1A1A2E),
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
             fontSize: 15,
           ),
@@ -437,11 +436,11 @@ class _HomePageState extends State<HomePage> {
           stream: FirebaseFirestore.instance.collection('events').snapshots(),
           builder: (context, eventSnapshot) {
             return StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('policies')
-                  .snapshots(),
+              stream:
+                  FirebaseFirestore.instance.collection('policies').snapshots(),
               builder: (context, policySnapshot) {
-                if (!meetingSnapshot.hasData || !eventSnapshot.hasData ||
+                if (!meetingSnapshot.hasData ||
+                    !eventSnapshot.hasData ||
                     !policySnapshot.hasData) {
                   return const Center(child: CircularProgressIndicator());
                 }
@@ -456,20 +455,32 @@ class _HomePageState extends State<HomePage> {
                       children: [
                         Expanded(
                           child: _buildStatCard(
-                            title: "Total Meetings",
-                            value: meetingCount.toString(),
-                            icon: Icons.calendar_today,
-                            iconColor: const Color(0xFFB993D6),
-                          ),
+                              title: "Total Meetings",
+                              value: meetingCount.toString(),
+                              icon: Icons.calendar_today,
+                              iconColor: const Color(0xFFB993D6),
+                              onTap: () {
+                                Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) =>
+                                            const MeetingsScreen()));
+                              }),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: _buildStatCard(
-                            title: "Upcoming Events",
-                            value: eventCount.toString(),
-                            icon: Icons.event_note,
-                            iconColor: const Color(0xFF8CA6DB),
-                          ),
+                              title: "Upcoming Events",
+                              value: eventCount.toString(),
+                              icon: Icons.event_note,
+                              iconColor: const Color(0xFF8CA6DB),
+                              onTap: () {
+                                Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) =>
+                                            const EventsScreen()));
+                              }),
                         ),
                       ],
                     ),
@@ -478,20 +489,32 @@ class _HomePageState extends State<HomePage> {
                       children: [
                         Expanded(
                           child: _buildStatCard(
-                            title: "Active Policies",
-                            value: policyCount.toString(),
-                            icon: Icons.description,
-                            iconColor: const Color(0xFFB993D6),
-                          ),
+                              title: "Active Policies",
+                              value: policyCount.toString(),
+                              icon: Icons.description,
+                              iconColor: const Color(0xFFB993D6),
+                              onTap: () {
+                                Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) =>
+                                            const PoliciesScreen()));
+                              }),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: _buildStatCard(
-                            title: "Meetings",
-                            value: meetingCount.toString(),
-                            icon: Icons.people,
-                            iconColor: const Color(0xFF8CA6DB),
-                          ),
+                              title: "This month meetings",
+                              value: meetingCount.toString(),
+                              icon: Icons.people,
+                              iconColor: const Color(0xFF8CA6DB),
+                              onTap: () {
+                                Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) =>
+                                            const MeetingsScreen()));
+                              }),
                         ),
                       ],
                     ),
@@ -510,62 +533,66 @@ class _HomePageState extends State<HomePage> {
     required String value,
     required IconData icon,
     required Color iconColor,
+    required VoidCallback onTap,
   }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                    fontWeight: FontWeight.w500,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: iconColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  icon,
-                  color: iconColor,
-                  size: 18,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF1A1A2E),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
             ),
-          ),
-        ],
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                      fontWeight: FontWeight.w500,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: iconColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: iconColor,
+                    size: 18,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              value,
+              style: const TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF1A1A2E),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -613,13 +640,15 @@ class _HomePageState extends State<HomePage> {
 
               var meetings = snapshot.data!.docs
                   .map((doc) =>
-                  Meeting.fromMap(doc.data() as Map<String, dynamic>))
+                      Meeting.fromMap(doc.data() as Map<String, dynamic>))
                   .toList();
 
               final now = DateTime.now();
               meetings.sort((a, b) {
-                final aIsOngoing = a.startTime.isBefore(now) && a.endTime.isAfter(now);
-                final bIsOngoing = b.startTime.isBefore(now) && b.endTime.isAfter(now);
+                final aIsOngoing =
+                    a.startTime.isBefore(now) && a.endTime.isAfter(now);
+                final bIsOngoing =
+                    b.startTime.isBefore(now) && b.endTime.isAfter(now);
                 if (aIsOngoing && !bIsOngoing) return -1;
                 if (!aIsOngoing && bIsOngoing) return 1;
                 return a.startTime.compareTo(b.startTime);
@@ -633,10 +662,9 @@ class _HomePageState extends State<HomePage> {
                   itemBuilder: (context, index) {
                     final meeting = meetings[index];
                     return Container(
-                      width: kIsWeb ? 320 : MediaQuery
-                          .of(context)
-                          .size
-                          .width * 0.85,
+                      width: kIsWeb
+                          ? 320
+                          : MediaQuery.of(context).size.width * 0.85,
                       margin: EdgeInsets.only(
                         right: 12,
                         left: index == 0 ? 0 : 0,
@@ -694,14 +722,17 @@ class _HomePageState extends State<HomePage> {
               ),
               const SizedBox(width: 8),
               Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 10, vertical: 5),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
-                  color: (isOngoing ? Colors.green : const Color(0xFF8CA6DB)).withOpacity(0.2),
+                  color: (isOngoing ? Colors.green : const Color(0xFF8CA6DB))
+                      .withOpacity(0.2),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  isOngoing ? 'Ongoing' : (isCompleted ? 'Completed' : meeting.status),
+                  isOngoing
+                      ? 'Ongoing'
+                      : (isCompleted ? 'Completed' : meeting.status),
                   style: TextStyle(
                     fontSize: 11,
                     color: isOngoing ? Colors.green : const Color(0xFF8CA6DB),
@@ -815,13 +846,13 @@ class _HomePageState extends State<HomePage> {
 
               final events = snapshot.data!.docs
                   .map((doc) =>
-                  Event.fromMap(doc.data() as Map<String, dynamic>))
+                      Event.fromMap(doc.data() as Map<String, dynamic>))
                   .toList();
 
               return ListView.separated(
                 itemCount: events.length,
                 separatorBuilder: (context, index) =>
-                const SizedBox(height: 12),
+                    const SizedBox(height: 12),
                 itemBuilder: (context, index) {
                   final event = events[index];
 
@@ -869,6 +900,7 @@ class _HomePageState extends State<HomePage> {
       ],
     );
   }
+
   Widget _buildActivityItem({
     required String title,
     required String time,
@@ -931,7 +963,8 @@ class _HomePageState extends State<HomePage> {
                     ),
                     const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
                         color: iconColor.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(6),
@@ -961,7 +994,7 @@ class DragScrollBehavior extends MaterialScrollBehavior {
 
   @override
   Set<PointerDeviceKind> get dragDevices => {
-    PointerDeviceKind.touch,
-    PointerDeviceKind.mouse,
-  };
+        PointerDeviceKind.touch,
+        PointerDeviceKind.mouse,
+      };
 }
