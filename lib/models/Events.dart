@@ -1,26 +1,32 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class Event {
   final String id;
   final String title;
   final String description;
   final DateTime startTime;
+  final DateTime endTime;
   final String venue;
-  final String eventType; // conference, seminar, workshop, etc.
+  final String eventType;
   final String organizer;
   final DateTime createdAt;
   final String status;
   final String? documentUrl;
+  final String createdBy;
 
   Event({
     required this.id,
     required this.title,
     required this.description,
     required this.startTime,
+    required this.endTime,
     required this.venue,
     required this.eventType,
     required this.organizer,
     required this.createdAt,
     this.status = 'upcoming',
     this.documentUrl,
+    required this.createdBy,
   });
 
   Map<String, dynamic> toMap() {
@@ -28,28 +34,47 @@ class Event {
       'id': id,
       'title': title,
       'description': description,
-      'startTime': startTime.toIso8601String(),
+      'startTime': Timestamp.fromDate(startTime),
+      'endTime': Timestamp.fromDate(endTime),
       'venue': venue,
       'eventType': eventType,
       'organizer': organizer,
-      'createdAt': createdAt.toIso8601String(),
+      'createdAt': Timestamp.fromDate(createdAt),
       'status': status,
       'documentUrl': documentUrl,
+      'createdBy': createdBy,
     };
   }
 
   factory Event.fromMap(Map<String, dynamic> map) {
+    DateTime _parseTimestamp(dynamic value, DateTime fallback) {
+      if (value is Timestamp) {
+        return value.toDate();
+      }
+      if (value is String) {
+        return DateTime.tryParse(value) ?? fallback;
+      }
+      return fallback;
+    }
+
+    final now = DateTime.now();
+    final createdAt = _parseTimestamp(map['createdAt'], now);
+    final startTime = _parseTimestamp(map['startTime'], createdAt);
+    final endTime = _parseTimestamp(map['endTime'], startTime);
+
     return Event(
-      id: map['id'] ?? '',
-      title: map['title'] ?? '',
-      description: map['description'] ?? '',
-      startTime: DateTime.parse(map['startTime']),
-      venue: map['venue'] ?? '',
-      eventType: map['eventType'] ?? 'conference',
-      organizer: map['organizer'] ?? '',
-      createdAt: DateTime.parse(map['createdAt']),
-      status: map['status'] ?? 'upcoming',
-      documentUrl: map['documentUrl'],
+      id: map['id'] as String? ?? '',
+      title: map['title'] as String? ?? 'Untitled Event',
+      description: map['description'] as String? ?? '',
+      startTime: startTime,
+      endTime: endTime,
+      venue: map['venue'] as String? ?? 'No venue specified',
+      eventType: map['eventType'] as String? ?? 'general',
+      organizer: map['organizer'] as String? ?? '',
+      createdAt: createdAt,
+      status: map['status'] as String? ?? 'upcoming',
+      documentUrl: map['documentUrl'] as String?,
+      createdBy: map['createdBy'] as String? ?? '',
     );
   }
 
@@ -62,13 +87,10 @@ class Event {
   }
 
   String getFormattedTime() {
-    String formatTime(DateTime time) {
-      final hour = time.hour > 12 ? time.hour - 12 : (time.hour == 0 ? 12 : time.hour);
-      final minute = time.minute.toString().padLeft(2, '0');
-      final period = time.hour >= 12 ? 'PM' : 'AM';
-      return '$hour:$minute $period';
-    }
-    return formatTime(startTime);
+    final hour = startTime.hour > 12 ? startTime.hour - 12 : (startTime.hour == 0 ? 12 : startTime.hour);
+    final minute = startTime.minute.toString().padLeft(2, '0');
+    final period = startTime.hour >= 12 ? 'PM' : 'AM';
+    return '$hour:$minute $period';
   }
 
   String getEventTypeLabel() {

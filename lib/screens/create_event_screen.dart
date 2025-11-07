@@ -3,6 +3,8 @@ import 'package:meetbank/models/Events.dart';
 import 'package:uuid/uuid.dart';
 import 'package:intl/intl.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class CreateEventScreen extends StatefulWidget {
   const CreateEventScreen({super.key});
@@ -17,8 +19,10 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   final descriptionController = TextEditingController();
   final venueController = TextEditingController();
   String? documentUrl;
+  bool _isSaving = false;
 
   DateTime? startTime;
+  DateTime? endTime; // Added endTime
   String selectedEventType = 'conference';
 
   final List<Map<String, dynamic>> eventTypes = [
@@ -29,7 +33,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     {'value': 'training', 'label': 'Training', 'icon': Icons.model_training},
   ];
 
-  Future<void> _pickDateTime() async {
+  // Modified to handle both start and end time
+  Future<void> _pickDateTime(bool isStart) async {
     final now = DateTime.now();
     final pickedDate = await showDatePicker(
       context: context,
@@ -79,7 +84,11 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     );
 
     setState(() {
-      startTime = dateTime;
+      if (isStart) {
+        startTime = dateTime;
+      } else {
+        endTime = dateTime;
+      }
     });
   }
 
@@ -92,30 +101,87 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     }
   }
 
-  void _saveEvent() {
-    if (!_formKey.currentState!.validate() || startTime == null) {
+  Future<void> _saveEvent() async {
+    // Added validation for endTime
+    if (!_formKey.currentState!.validate() || startTime == null || endTime == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please fill all required fields'),
+          content: Text('Please fill all required fields, including start and end times.'),
           backgroundColor: Colors.redAccent,
         ),
       );
       return;
     }
 
+    if (endTime!.isBefore(startTime!)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('End time cannot be before the start time.'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isSaving = true;
+    });
+
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('You must be logged in to create an event.'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      setState(() {
+        _isSaving = false;
+      });
+      return;
+    }
+
+    // Added endTime to the Event object
     final event = Event(
       id: const Uuid().v4(),
       title: titleController.text.trim(),
       description: descriptionController.text.trim(),
       startTime: startTime!,
+      endTime: endTime!,
       venue: venueController.text.trim(),
       eventType: selectedEventType,
-      organizer: 'admin',
+      organizer: user.displayName ?? 'Admin',
       createdAt: DateTime.now(),
       documentUrl: documentUrl,
+      createdBy: user.uid,
     );
 
-    Navigator.pop(context, event);
+    try {
+      await FirebaseFirestore.instance
+          .collection('events')
+          .doc(event.id)
+          .set(event.toMap());
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Event created successfully!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      Navigator.pop(context);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to save event: $e'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    } finally {
+      setState(() {
+        _isSaving = false;
+      });
+    }
   }
 
   @override
@@ -187,13 +253,21 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                       title: 'Start Time',
                       dateTime: startTime,
                       icon: Icons.calendar_today_rounded,
-                      onTap: _pickDateTime,
+                      onTap: () => _pickDateTime(true), // Point to the modified picker
+                    ),
+                    const SizedBox(height: 12),
+                    // Added the End Time picker
+                    _buildDateTimeCard(
+                      title: 'End Time',
+                      dateTime: endTime,
+                      icon: Icons.event_available_rounded,
+                      onTap: () => _pickDateTime(false),
                     ),
                     const SizedBox(height: 16),
                     _buildDocumentPicker(),
                     const SizedBox(height: 32),
                     ElevatedButton(
-                      onPressed: _saveEvent,
+                      onPressed: _isSaving ? null : _saveEvent,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFB993D6),
                         foregroundColor: Colors.white,
@@ -203,7 +277,16 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                         ),
                         elevation: 0,
                       ),
-                      child: const Text(
+                      child: _isSaving
+                          ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 3,
+                        ),
+                      )
+                          : const Text(
                         "Create Event",
                         style: TextStyle(
                           fontSize: 16,

@@ -1,38 +1,31 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:meetbank/screens/cards/meeting_card.dart';
 import 'package:meetbank/models/Meeting.dart';
 import 'package:meetbank/screens/create_meeting_screen.dart';
-import 'package:meetbank/screens/meeting_details_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class MeetingsScreen extends StatefulWidget {
-  const MeetingsScreen({super.key});
+  const MeetingsScreen({Key? key}) : super(key: key);
 
   @override
   State<MeetingsScreen> createState() => _MeetingsScreenState();
 }
 
-class _MeetingsScreenState extends State<MeetingsScreen> {
-  void _navigateAndAddMeeting() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const CreateMeetingScreen()),
-    );
+class _MeetingsScreenState extends State<MeetingsScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 3, vsync: this);
   }
 
-  void _navigateToMeetingDetails(Meeting meeting) async {
-    final updatedMeeting = await Navigator.push<Meeting>(
-      context,
-      MaterialPageRoute(
-        builder: (context) => MeetingDetailsScreen(meeting: meeting),
-      ),
-    );
-
-    if (updatedMeeting != null) {
-      await FirebaseFirestore.instance
-          .collection('meetings')
-          .doc(updatedMeeting.id)
-          .update(updatedMeeting.toMap());
-    }
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   @override
@@ -50,6 +43,28 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         iconTheme: const IconThemeData(color: Color(0xFF1A1A2E)),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(50),
+          child: Container(
+            color: Colors.white,
+            child: TabBar(
+              controller: _tabController,
+              labelColor: const Color(0xFFB993D6),
+              unselectedLabelColor: Colors.grey[600],
+              indicatorColor: const Color(0xFFB993D6),
+              indicatorWeight: 3,
+              labelStyle: const TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+              ),
+              tabs: const [
+                Tab(text: "Upcoming"),
+                Tab(text: "Completed"),
+                Tab(text: "All"),
+              ],
+            ),
+          ),
+        ),
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance.collection('meetings').snapshots(),
@@ -57,7 +72,6 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
           if (snapshot.hasError) {
             return const Center(child: Text('Something went wrong'));
           }
-
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
@@ -66,124 +80,130 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
               .map((doc) => Meeting.fromMap(doc.data() as Map<String, dynamic>))
               .toList();
 
-          if (meetings.isEmpty) {
-            return _buildEmptyState();
-          } else {
-            return _buildMeetingList(meetings);
-          }
+          return TabBarView(
+            controller: _tabController,
+            children: [
+              _buildMeetingsList(meetings, "upcoming"),
+              _buildMeetingsList(meetings, "completed"),
+              _buildMeetingsList(meetings, "all"),
+            ],
+          );
         },
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _navigateAndAddMeeting,
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          Navigator.push(context, MaterialPageRoute(builder: (context) => const CreateMeetingScreen()));
+        },
         backgroundColor: const Color(0xFFB993D6),
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.calendar_today_outlined,
-            size: 80,
-            color: Colors.grey[300],
-          ),
-          const SizedBox(height: 20),
-          const Text(
-            'No Meetings Found',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF1A1A2E),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Tap the + button to create your first meeting.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey[600],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMeetingList(List<Meeting> meetings) {
-    return ListView.builder(
-      padding: const EdgeInsets.all(12),
-      itemCount: meetings.length,
-      itemBuilder: (context, index) {
-        final meeting = meetings[index];
-        return _buildMeetingCard(meeting);
-      },
-    );
-  }
-
-  Widget _buildMeetingCard(Meeting meeting) {
-    return Card(
-      elevation: 2,
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      shadowColor: Colors.black.withOpacity(0.1),
-      child: InkWell(
-        onTap: () => _navigateToMeetingDetails(meeting),
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                meeting.title,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1A1A2E),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                meeting.description,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[600],
-                ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    '${meeting.getFormattedDate()} • ${meeting.getFormattedTime()}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[700],
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const Text(
-                    'View Details',
-                    style: TextStyle(
-                      color: Color(0xFFB993D6),
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
+        icon: const Icon(Icons.add, color: Colors.white,),
+        label: const Text(
+          "New Meeting",
+          style: TextStyle(fontWeight: FontWeight.w600, color: Colors.white),
         ),
       ),
+    );
+  }
+
+  Widget _buildMeetingsList(List<Meeting> meetings, String filter) {
+    final now = DateTime.now();
+    List<Meeting> filtered = [];
+
+    if (filter == "upcoming") {
+      filtered = meetings.where((m) => m.startTime.isAfter(now)).toList();
+    } else if (filter == "completed") {
+      filtered = meetings.where((m) => m.endTime.isBefore(now)).toList();
+    } else {
+      filtered = meetings;
+    }
+
+    if (filter == "all") {
+      final upcoming = filtered.where((m) => m.startTime.isAfter(now)).toList();
+      final completed = filtered.where((m) => m.endTime.isBefore(now)).toList();
+
+      upcoming.sort((a, b) => a.startTime.compareTo(b.startTime));
+      completed.sort((a, b) => b.startTime.compareTo(a.startTime));
+
+      filtered = [...upcoming, ...completed];
+    } else {
+      filtered.sort((a, b) => a.startTime.compareTo(b.startTime));
+    }
+
+    if (filtered.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.event_busy_outlined, size: 80, color: Colors.grey[400]),
+            const SizedBox(height: 16),
+            Text(
+              "No meetings found",
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[600],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (kIsWeb) {
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          int crossAxisCount = 1;
+          if (constraints.maxWidth > 1200) {
+            crossAxisCount = 3;
+          } else if (constraints.maxWidth > 800) {
+            crossAxisCount = 2;
+          }
+
+          return GridView.builder(
+            padding: const EdgeInsets.all(16),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: crossAxisCount,
+              mainAxisExtent: 380,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+            ),
+            itemCount: filtered.length,
+            itemBuilder: (context, index) {
+              final meeting = filtered[index];
+              return MeetingCard(
+                id: meeting.id,
+                title: meeting.title,
+                description: meeting.description,
+                startTime: meeting.startTime,
+                endTime: meeting.endTime,
+                meetingLink: meeting.meetingLink,
+                linkType: meeting.linkType,
+                onTap: () {},
+              );
+            },
+          );
+        },
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: filtered.length,
+      itemBuilder: (context, index) {
+        final meeting = filtered[index];
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 16),
+          child: MeetingCard(
+            id: meeting.id,
+            title: meeting.title,
+            description: meeting.description,
+            startTime: meeting.startTime,
+            endTime: meeting.endTime,
+            meetingLink: meeting.meetingLink,
+            linkType: meeting.linkType,
+            onTap: () {},
+          ),
+        );
+      },
     );
   }
 }

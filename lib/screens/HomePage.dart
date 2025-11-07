@@ -3,15 +3,24 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:meetbank/auth_service.dart';
+import 'package:meetbank/models/Events.dart';
+import 'package:meetbank/models/Meeting.dart';
+import 'package:meetbank/models/Policies.dart';
 import 'package:meetbank/screens/create_event_screen.dart';
 import 'package:meetbank/screens/create_meeting_screen.dart';
 import 'package:meetbank/screens/events_screen.dart';
 import 'package:meetbank/screens/meetings_screen.dart';
 import 'package:meetbank/screens/policies_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser!;
@@ -30,7 +39,52 @@ class HomePage extends StatelessWidget {
         elevation: 0,
         iconTheme: const IconThemeData(color: Color(0xFF1A1A2E)),
       ),
-      drawer: Drawer(
+      drawer: _buildDrawer(context, user),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Dashboard Header
+              const Text(
+                "Dashboard",
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1A1A2E),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                "Welcome back! Here's an overview of your institutional records.",
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[600],
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // Stats Cards
+              _buildStatsGrid(),
+              const SizedBox(height: 28),
+
+              // Upcoming Meetings
+              _buildUpcomingMeetings(),
+              const SizedBox(height: 28),
+
+              // Recent Events
+              _buildRecentEvents(),
+              const SizedBox(height: 20),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDrawer(BuildContext context, User user) {
+    return Drawer(
         child: Container(
           color: Colors.white,
           child: Column(
@@ -225,198 +279,7 @@ class HomePage extends StatelessWidget {
             ],
           ),
         ),
-      ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Dashboard Header
-              const Text(
-                "Dashboard",
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1A1A2E),
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                "Welcome back! Here's an overview of your institutional records.",
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[600],
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Stats Cards - 2x2 Grid
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildStatCard(
-                      title: "Total Meetings",
-                      value: "0",
-                      subtitle: "+0% from last month",
-                      subtitleColor: Colors.grey,
-                      icon: Icons.calendar_today,
-                      iconColor: const Color(0xFFB993D6),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildStatCard(
-                      title: "Upcoming Events",
-                      value: "0",
-                      subtitle: "0 this week",
-                      subtitleColor: Colors.grey,
-                      icon: Icons.event_note,
-                      iconColor: const Color(0xFF8CA6DB),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildStatCard(
-                      title: "Active Policies",
-                      value: "0",
-                      subtitle: "0 updated recently",
-                      subtitleColor: Colors.grey,
-                      icon: Icons.description,
-                      iconColor: const Color(0xFFB993D6),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildStatCard(
-                      title: "Meetings",
-                      value: "0",
-                      subtitle: "+0% engagement",
-                      subtitleColor: Colors.grey,
-                      icon: Icons.people,
-                      iconColor: const Color(0xFF8CA6DB),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 28),
-
-              // Upcoming Meetings Section with Horizontal Scroll
-              const Text(
-                "Upcoming Meetings",
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1A1A2E),
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                "Your scheduled meetings for the next 7 days",
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Colors.grey[600],
-                ),
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                height: 220,
-                child: ScrollConfiguration(
-                  behavior: const DragScrollBehavior(),
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: 3,
-                    itemBuilder: (context, index) {
-                      return Container(
-                        width: kIsWeb ? 320 : MediaQuery.of(context).size.width * 0.85,
-                        margin: EdgeInsets.only(
-                          right: 12,
-                          left: index == 0 ? 0 : 0,
-                        ),
-                        child: _buildMeetingCard(
-                          context,
-                          title: index == 0
-                              ? "Board of Directors Q1 Review"
-                              : index == 1
-                              ? "Policy Review Committee"
-                              : "Annual Budget Planning",
-                          date: index == 0
-                              ? "May 15, 2025"
-                              : index == 1
-                              ? "May 16, 2025"
-                              : "May 18, 2025",
-                          time: index == 0
-                              ? "10:00 AM - 12:00 PM"
-                              : index == 1
-                              ? "2:00 PM - 3:30 PM"
-                              : "9:00 AM - 11:00 AM",
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ),
-              const SizedBox(height: 28),
-
-              // Recent Activity Section (Vertical Stack)
-              const Text(
-                "Recent Activity",
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1A1A2E),
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                "Latest updates across all records",
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Colors.grey[600],
-                ),
-              ),
-              const SizedBox(height: 16),
-              _buildActivityItem(
-                title: "Annual Conference 2025 Minutes Published",
-                time: "2 hours ago",
-                type: "Event",
-                icon: Icons.event_note,
-                iconColor: Colors.green,
-              ),
-              const SizedBox(height: 12),
-              _buildActivityItem(
-                title: "Executive Committee Meeting Completed",
-                time: "5 hours ago",
-                type: "Meeting",
-                icon: Icons.calendar_today,
-                iconColor: const Color(0xFFB993D6),
-              ),
-              const SizedBox(height: 12),
-              _buildActivityItem(
-                title: "Data Protection Policy v2.1 Uploaded",
-                time: "1 day ago",
-                type: "Policy",
-                icon: Icons.description,
-                iconColor: const Color(0xFF8CA6DB),
-              ),
-              const SizedBox(height: 12),
-              _buildActivityItem(
-                title: "Strategic Planning Session Recorded",
-                time: "2 days ago",
-                type: "Meeting",
-                icon: Icons.calendar_today,
-                iconColor: const Color(0xFFB993D6),
-              ),
-              const SizedBox(height: 20),
-            ],
-          ),
-        ),
-      ),
-    );
+      );
   }
 
   Widget _buildMenuItem({
@@ -477,11 +340,82 @@ class HomePage extends StatelessWidget {
     );
   }
 
+  Widget _buildStatsGrid() {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance.collection('meetings').snapshots(),
+      builder: (context, meetingSnapshot) {
+        return StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance.collection('events').snapshots(),
+          builder: (context, eventSnapshot) {
+            return StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance.collection('policies').snapshots(),
+              builder: (context, policySnapshot) {
+                if (!meetingSnapshot.hasData || !eventSnapshot.hasData || !policySnapshot.hasData) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                final meetingCount = meetingSnapshot.data!.docs.length;
+                final eventCount = eventSnapshot.data!.docs.length;
+                final policyCount = policySnapshot.data!.docs.length;
+
+                return Column(
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildStatCard(
+                            title: "Total Meetings",
+                            value: meetingCount.toString(),
+                            icon: Icons.calendar_today,
+                            iconColor: const Color(0xFFB993D6),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _buildStatCard(
+                            title: "Upcoming Events",
+                            value: eventCount.toString(),
+                            icon: Icons.event_note,
+                            iconColor: const Color(0xFF8CA6DB),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildStatCard(
+                            title: "Active Policies",
+                            value: policyCount.toString(),
+                            icon: Icons.description,
+                            iconColor: const Color(0xFFB993D6),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _buildStatCard(
+                            title: "Meetings",
+                            value: meetingCount.toString(),
+                            icon: Icons.people,
+                            iconColor: const Color(0xFF8CA6DB),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                );
+              },
+            );
+          },
+        );
+      },
+    );
+  }
+
   Widget _buildStatCard({
     required String title,
     required String value,
-    required String subtitle,
-    required Color subtitleColor,
     required IconData icon,
     required Color iconColor,
   }) {
@@ -539,27 +473,85 @@ class HomePage extends StatelessWidget {
               color: Color(0xFF1A1A2E),
             ),
           ),
-          const SizedBox(height: 4),
-          Text(
-            subtitle,
-            style: TextStyle(
-              fontSize: 11,
-              color: subtitleColor,
-              fontWeight: FontWeight.w500,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
         ],
       ),
     );
   }
 
-  Widget _buildMeetingCard(BuildContext context, {
-    required String title,
-    required String date,
-    required String time,
-  }) {
+  Widget _buildUpcomingMeetings() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          "Upcoming Meetings",
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF1A1A2E),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          "Your scheduled meetings for the next 7 days",
+          style: TextStyle(
+            fontSize: 13,
+            color: Colors.grey[600],
+          ),
+        ),
+        const SizedBox(height: 16),
+        SizedBox(
+          height: 220,
+          child: StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection('meetings')
+                .where('startTime', isGreaterThan: DateTime.now().toIso8601String())
+                .orderBy('startTime')
+                .limit(10)
+                .snapshots(),
+            builder: (context, snapshot) {
+              if (snapshot.hasError) {
+                return const Center(child: Text('Something went wrong'));
+              }
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (snapshot.data!.docs.isEmpty) {
+                return const Center(child: Text('No upcoming meetings'));
+              }
+
+              final meetings = snapshot.data!.docs
+                  .map((doc) => Meeting.fromMap(doc.data() as Map<String, dynamic>))
+                  .toList();
+
+              return ScrollConfiguration(
+                behavior: const DragScrollBehavior(),
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: meetings.length,
+                  itemBuilder: (context, index) {
+                    final meeting = meetings[index];
+                    return Container(
+                      width: kIsWeb ? 320 : MediaQuery.of(context).size.width * 0.85,
+                      margin: EdgeInsets.only(
+                        right: 12,
+                        left: index == 0 ? 0 : 0,
+                      ),
+                      child: _buildMeetingCard(
+                        context,
+                        meeting: meeting,
+                      ),
+                    );
+                  },
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMeetingCard(BuildContext context, {required Meeting meeting}) {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -582,7 +574,7 @@ class HomePage extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  title,
+                  meeting.title,
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -599,9 +591,9 @@ class HomePage extends StatelessWidget {
                   color: const Color(0xFF8CA6DB).withOpacity(0.2),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: const Text(
-                  "upcoming",
-                  style: TextStyle(
+                child: Text(
+                  meeting.status,
+                  style: const TextStyle(
                     fontSize: 11,
                     color: Color(0xFF8CA6DB),
                     fontWeight: FontWeight.w600,
@@ -616,7 +608,7 @@ class HomePage extends StatelessWidget {
               Icon(Icons.calendar_today, size: 14, color: Colors.grey[600]),
               const SizedBox(width: 8),
               Text(
-                date,
+                meeting.getFormattedDate(),
                 style: TextStyle(
                   fontSize: 13,
                   color: Colors.grey[600],
@@ -630,7 +622,7 @@ class HomePage extends StatelessWidget {
               Icon(Icons.access_time, size: 14, color: Colors.grey[600]),
               const SizedBox(width: 8),
               Text(
-                time,
+                meeting.getFormattedTime(),
                 style: TextStyle(
                   fontSize: 13,
                   color: Colors.grey[600],
@@ -671,6 +663,71 @@ class HomePage extends StatelessWidget {
       ),
     );
   }
+
+  Widget _buildRecentEvents() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          "Recent Activity",
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF1A1A2E),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          "Latest updates across all records",
+          style: TextStyle(
+            fontSize: 13,
+            color: Colors.grey[600],
+          ),
+        ),
+        const SizedBox(height: 16),
+        SizedBox(
+          height: 300,
+          child: StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection('events')
+                .orderBy('createdAt', descending: true)
+                .limit(5)
+                .snapshots(),
+            builder: (context, snapshot) {
+              if (snapshot.hasError) {
+                return const Center(child: Text('Something went wrong'));
+              }
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (snapshot.data!.docs.isEmpty) {
+                return const Center(child: Text('No recent events'));
+              }
+
+              final events = snapshot.data!.docs
+                  .map((doc) => Event.fromMap(doc.data() as Map<String, dynamic>))
+                  .toList();
+
+              return ListView.builder(
+                itemCount: events.length,
+                itemBuilder: (context, index) {
+                  final event = events[index];
+                  return _buildActivityItem(
+                    title: event.title,
+                    time: event.getFormattedDate(),
+                    type: event.getEventTypeLabel(),
+                    icon: Icons.event_note,
+                    iconColor: Colors.green,
+                  );
+                },
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
 
   Widget _buildActivityItem({
     required String title,
