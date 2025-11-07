@@ -5,15 +5,15 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:meetbank/auth_service.dart';
 import 'package:meetbank/models/Events.dart';
 import 'package:meetbank/models/Meeting.dart';
-import 'package:meetbank/models/Policies.dart';
 import 'package:meetbank/screens/add_summary_screen.dart';
 import 'package:meetbank/screens/create_event_screen.dart';
 import 'package:meetbank/screens/create_meeting_screen.dart';
 import 'package:meetbank/screens/events_screen.dart';
+import 'package:meetbank/screens/meeting_screen.dart';
 import 'package:meetbank/screens/meetings_screen.dart';
 import 'package:meetbank/screens/policies_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:meetbank/screens/video_conference_page.dart';
+import 'package:uuid/uuid.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -303,10 +303,12 @@ class _HomePageState extends State<HomePage> {
                   title: "Start Meeting",
                   onTap: () {
                     Navigator.pop(context);
+                    final meetingId = const Uuid().v4();
+                    final meetingLink = 'meetbank/$meetingId';
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const VideoConferencePage(),
+                        builder: (context) => MeetingScreen(meetingLink: meetingLink),
                       ),
                     );
                   },

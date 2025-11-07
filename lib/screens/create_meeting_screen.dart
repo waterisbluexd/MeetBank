@@ -113,7 +113,7 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
     }
 
     final meetingId = const Uuid().v4();
-    final meetingLink = 'meetbank://meetings/$meetingId';
+    final meetingLink = 'meetbank/\$meetingId';
 
     final meeting = Meeting(
       id: meetingId,
@@ -147,7 +147,7 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to save meeting: $e'),
+          content: Text('Failed to save meeting: \$e'),
           backgroundColor: Colors.redAccent,
         ),
       );

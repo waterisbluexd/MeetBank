@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:jitsi_meet_flutter_sdk/jitsi_meet_flutter_sdk.dart';
+import 'package:meetbank/screens/meeting_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -282,72 +282,10 @@ class MeetingCard extends StatelessWidget {
 
   void _launchMeeting(BuildContext context) async {
     if (linkType.toLowerCase() == 'meetbank') {
-      final jitsiMeet = JitsiMeet();
-      var options = JitsiMeetConferenceOptions(
-        room: meetingLink.split('/').last,
-        configOverrides: {
-          "startWithAudioMuted": true,
-          "startWithVideoMuted": true,
-        },
-        featureFlags: {
-          FeatureFlags.addPeopleEnabled: true,
-          FeatureFlags.welcomePageEnabled: false,
-          FeatureFlags.preJoinPageEnabled: true,
-          FeatureFlags.unsafeRoomWarningEnabled: true,
-          FeatureFlags.resolution: FeatureFlagVideoResolutions.resolution720p,
-          FeatureFlags.audioFocusDisabled: true,
-          FeatureFlags.audioMuteButtonEnabled: true,
-          FeatureFlags.audioOnlyButtonEnabled: true,
-          FeatureFlags.calenderEnabled: true,
-          FeatureFlags.callIntegrationEnabled: true,
-          FeatureFlags.carModeEnabled: true,
-          FeatureFlags.closeCaptionsEnabled: true,
-          FeatureFlags.conferenceTimerEnabled: true,
-          FeatureFlags.chatEnabled: true,
-          FeatureFlags.filmstripEnabled: true,
-          FeatureFlags.fullScreenEnabled: true,
-          FeatureFlags.helpButtonEnabled: true,
-          FeatureFlags.inviteEnabled: true,
-          FeatureFlags.androidScreenSharingEnabled: true,
-          FeatureFlags.speakerStatsEnabled: true,
-          FeatureFlags.kickOutEnabled: true,
-          FeatureFlags.liveStreamingEnabled: true,
-          FeatureFlags.lobbyModeEnabled: true,
-          FeatureFlags.meetingNameEnabled: true,
-          FeatureFlags.meetingPasswordEnabled: true,
-          FeatureFlags.notificationEnabled: true,
-          FeatureFlags.overflowMenuEnabled: true,
-          FeatureFlags.pipEnabled: true,
-          FeatureFlags.pipWhileScreenSharingEnabled: true,
-          FeatureFlags.preJoinPageHideDisplayName: true,
-          FeatureFlags.raiseHandEnabled: true,
-          FeatureFlags.reactionsEnabled: true,
-          FeatureFlags.recordingEnabled: true,
-          FeatureFlags.replaceParticipant: true,
-          FeatureFlags.securityOptionEnabled: true,
-          FeatureFlags.serverUrlChangeEnabled: true,
-          FeatureFlags.settingsEnabled: true,
-          FeatureFlags.tileViewEnabled: true,
-          FeatureFlags.videoMuteEnabled: true,
-          FeatureFlags.videoShareEnabled: true,
-          FeatureFlags.toolboxEnabled: true,
-          FeatureFlags.iosRecordingEnabled: true,
-          FeatureFlags.iosScreenSharingEnabled: true,
-          FeatureFlags.toolboxAlwaysVisible: true,
-        },
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => MeetingScreen(meetingLink: meetingLink)),
       );
-      var listener = JitsiMeetEventListener(
-        conferenceJoined: (url) {
-          debugPrint("conferenceJoined: url: $url");
-        },
-        conferenceTerminated: (url, error) {
-          debugPrint("conferenceTerminated: url: $url, error: $error");
-        },
-        conferenceWillJoin: (url) {
-          debugPrint("conferenceWillJoin: url: $url");
-        },
-      );
-      await jitsiMeet.join(options, listener);
     } else {
       _launchMeetingLink(context);
     }
