@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:speech_to_text/speech_to_text.dart';
@@ -9,13 +10,10 @@ import 'package:uuid/uuid.dart';
 class MeetingScreen extends StatefulWidget {
   final String meetingLink;
 
-  const MeetingScreen({
-    Key? key,
-    required this.meetingLink,
-  }) : super(key: key);
+  const MeetingScreen({super.key, required this.meetingLink});
 
   @override
-  _MeetingScreenState createState() => _MeetingScreenState();
+  State<MeetingScreen> createState() => _MeetingScreenState();
 }
 
 class _MeetingScreenState extends State<MeetingScreen> {
@@ -26,7 +24,7 @@ class _MeetingScreenState extends State<MeetingScreen> {
 
   final _remoteRenderers = <String, RTCVideoRenderer>{};
   final _peerConnections = <String, RTCPeerConnection>{};
-  
+
   StreamSubscription? _participantsSubscription;
   StreamSubscription? _signalingSubscription;
 
@@ -40,7 +38,8 @@ class _MeetingScreenState extends State<MeetingScreen> {
   final SpeechToText _speechToText = SpeechToText();
   bool _isListening = false;
   String _lastWords = "";
-  
+  final StringBuffer _transcript = StringBuffer();
+
   @override
   void initState() {
     super.initState();
@@ -52,12 +51,12 @@ class _MeetingScreenState extends State<MeetingScreen> {
     _setupWebRTC();
     _initSpeech();
   }
-  
+
   void _initSpeech() async {
     await _speechToText.initialize();
     setState(() {});
   }
-  
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -85,13 +84,15 @@ class _MeetingScreenState extends State<MeetingScreen> {
   }
 
   Future<void> _setupWebRTC() async {
-    final meetingRef = FirebaseFirestore.instance.collection('meetings').doc(_meetingId);
+    final meetingRef =
+        FirebaseFirestore.instance.collection('meetings').doc(_meetingId);
 
     await _getUserMedia();
     _listenForSignaling(meetingRef);
 
     // Join the meeting by creating offers for existing participants
-    final participantsSnapshot = await meetingRef.collection('participants').get();
+    final participantsSnapshot =
+        await meetingRef.collection('participants').get();
     for (var participantDoc in participantsSnapshot.docs) {
       final otherUserId = participantDoc.id;
       if (otherUserId != _userId) {
@@ -100,10 +101,14 @@ class _MeetingScreenState extends State<MeetingScreen> {
     }
 
     // Add self to participants list
-    await meetingRef.collection('participants').doc(_userId).set({'id': _userId, 'joinedAt': FieldValue.serverTimestamp()});
+    await meetingRef
+        .collection('participants')
+        .doc(_userId)
+        .set({'id': _userId, 'joinedAt': FieldValue.serverTimestamp()});
 
     // Listen for new and leaving participants
-    _participantsSubscription = meetingRef.collection('participants').snapshots().listen((snapshot) {
+    _participantsSubscription =
+        meetingRef.collection('participants').snapshots().listen((snapshot) {
       if (mounted) {
         setState(() {
           _participantCount = snapshot.docs.length;
@@ -111,17 +116,24 @@ class _MeetingScreenState extends State<MeetingScreen> {
       }
       for (var change in snapshot.docChanges) {
         final docId = change.doc.id;
-        if (change.type == DocumentChangeType.added && docId != _userId && !_peerConnections.containsKey(docId)) {
+        if (change.type == DocumentChangeType.added &&
+            docId != _userId &&
+            !_peerConnections.containsKey(docId)) {
           _createPeerConnectionAndOffer(docId, meetingRef);
-        } else if (change.type == DocumentChangeType.removed && docId != _userId) {
+        } else if (change.type == DocumentChangeType.removed &&
+            docId != _userId) {
           _removePeer(docId);
         }
       }
     });
   }
-  
+
   void _listenForSignaling(DocumentReference meetingRef) {
-    _signalingSubscription = meetingRef.collection('signaling').where('to', isEqualTo: _userId).snapshots().listen((snapshot) async {
+    _signalingSubscription = meetingRef
+        .collection('signaling')
+        .where('to', isEqualTo: _userId)
+        .snapshots()
+        .listen((snapshot) async {
       for (var change in snapshot.docChanges) {
         if (change.type == DocumentChangeType.added) {
           final data = change.doc.data() as Map<String, dynamic>;
@@ -133,7 +145,8 @@ class _MeetingScreenState extends State<MeetingScreen> {
           switch (type) {
             case 'offer':
               final offerData = data['data'] as Map<String, dynamic>;
-              final offer = RTCSessionDescription(offerData['sdp'], offerData['type']);
+              final offer =
+                  RTCSessionDescription(offerData['sdp'], offerData['type']);
               await pc.setRemoteDescription(offer);
               final answer = await pc.createAnswer();
               await pc.setLocalDescription(answer);
@@ -146,14 +159,17 @@ class _MeetingScreenState extends State<MeetingScreen> {
               break;
             case 'answer':
               final answerData = data['data'] as Map<String, dynamic>;
-              final answer = RTCSessionDescription(answerData['sdp'], answerData['type']);
-              if (pc.signalingState != RTCSignalingState.RTCSignalingStateStable) {
-                  await pc.setRemoteDescription(answer);
+              final answer =
+                  RTCSessionDescription(answerData['sdp'], answerData['type']);
+              if (pc.signalingState !=
+                  RTCSignalingState.RTCSignalingStateStable) {
+                await pc.setRemoteDescription(answer);
               }
               break;
             case 'candidate':
               final candidateData = data['data'] as Map<String, dynamic>;
-              final candidate = RTCIceCandidate(candidateData['candidate'], candidateData['sdpMid'], candidateData['sdpMLineIndex']);
+              final candidate = RTCIceCandidate(candidateData['candidate'],
+                  candidateData['sdpMid'], candidateData['sdpMLineIndex']);
               await pc.addCandidate(candidate);
               break;
           }
@@ -163,7 +179,8 @@ class _MeetingScreenState extends State<MeetingScreen> {
     });
   }
 
-  Future<void> _createPeerConnectionAndOffer(String otherUserId, DocumentReference meetingRef) async {
+  Future<void> _createPeerConnectionAndOffer(
+      String otherUserId, DocumentReference meetingRef) async {
     final pc = await _createPeerConnection(otherUserId, meetingRef);
     final offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
@@ -175,7 +192,8 @@ class _MeetingScreenState extends State<MeetingScreen> {
     });
   }
 
-  Future<RTCPeerConnection> _createPeerConnection(String otherUserId, DocumentReference meetingRef) async {
+  Future<RTCPeerConnection> _createPeerConnection(
+      String otherUserId, DocumentReference meetingRef) async {
     if (_peerConnections.containsKey(otherUserId)) {
       return _peerConnections[otherUserId]!;
     }
@@ -183,9 +201,13 @@ class _MeetingScreenState extends State<MeetingScreen> {
     final renderer = RTCVideoRenderer();
     await renderer.initialize();
     _remoteRenderers[otherUserId] = renderer;
-    if(mounted) setState(() {});
+    if (mounted) setState(() {});
 
-    final configuration = <String, dynamic>{'iceServers': [{'urls': 'stun:stun.l.google.com:19302'}]};
+    final configuration = <String, dynamic>{
+      'iceServers': [
+        {'urls': 'stun:stun.l.google.com:19302'}
+      ]
+    };
     final pc = await createPeerConnection(configuration);
     _peerConnections[otherUserId] = pc;
 
@@ -196,7 +218,7 @@ class _MeetingScreenState extends State<MeetingScreen> {
     pc.onTrack = (event) {
       if (event.streams.isNotEmpty) {
         _remoteRenderers[otherUserId]?.srcObject = event.streams[0];
-        if(mounted) setState(() {});
+        if (mounted) setState(() {});
       }
     };
 
@@ -208,10 +230,10 @@ class _MeetingScreenState extends State<MeetingScreen> {
         'data': candidate.toMap(),
       });
     };
-    
+
     return pc;
   }
-  
+
   Future<void> _getUserMedia() async {
     final Map<String, dynamic> mediaConstraints = {
       'audio': true,
@@ -223,18 +245,28 @@ class _MeetingScreenState extends State<MeetingScreen> {
       _localStream = stream;
       _localRenderer.srcObject = _localStream;
     } catch (e) {
-      print(e.toString());
+      if (kDebugMode) {
+        print(e.toString());
+      }
     }
   }
 
   void _leaveMeeting() async {
-    final meetingRef = FirebaseFirestore.instance.collection('meetings').doc(_meetingId);
+    final meetingRef =
+        FirebaseFirestore.instance.collection('meetings').doc(_meetingId);
+
+    // Save the transcript to the summary field
+    await meetingRef.update({'summary': _transcript.toString()});
+
     await meetingRef.collection('participants').doc(_userId).delete();
-    final signalingQuery = await meetingRef.collection('signaling').where('from', isEqualTo: _userId).get();
+    final signalingQuery = await meetingRef
+        .collection('signaling')
+        .where('from', isEqualTo: _userId)
+        .get();
     for (var doc in signalingQuery.docs) {
       await doc.reference.delete();
     }
-    
+
     _hangUp();
     if (mounted) Navigator.pop(context);
   }
@@ -246,13 +278,13 @@ class _MeetingScreenState extends State<MeetingScreen> {
     _peerConnections.clear();
     _remoteRenderers.clear();
   }
-  
+
   void _removePeer(String userId) {
     _peerConnections[userId]?.close();
     _peerConnections.remove(userId);
     _remoteRenderers[userId]?.dispose();
     _remoteRenderers.remove(userId);
-    if(mounted) setState(() {});
+    if (mounted) setState(() {});
   }
 
   void _toggleMute() {
@@ -280,6 +312,10 @@ class _MeetingScreenState extends State<MeetingScreen> {
       onResult: (result) {
         setState(() {
           _lastWords = result.recognizedWords;
+          if (result.finalResult) {
+            _transcript.writeln(_lastWords);
+            _lastWords = "";
+          }
         });
       },
     );
@@ -294,7 +330,7 @@ class _MeetingScreenState extends State<MeetingScreen> {
       _isListening = false;
     });
   }
-  
+
   void _toggleListening() {
     if (_isListening) {
       _stopListening();
@@ -303,7 +339,7 @@ class _MeetingScreenState extends State<MeetingScreen> {
     }
   }
 
- @override
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
@@ -319,11 +355,14 @@ class _MeetingScreenState extends State<MeetingScreen> {
               itemBuilder: (context, index) {
                 final userId = _remoteRenderers.keys.elementAt(index);
                 final renderer = _remoteRenderers[userId]!;
-                return RTCVideoView(renderer, objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover);
+                return RTCVideoView(renderer,
+                    objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover);
               },
             ),
           ),
-          if (_localRenderer.srcObject != null && _localViewTop != null && _localViewLeft != null)
+          if (_localRenderer.srcObject != null &&
+              _localViewTop != null &&
+              _localViewLeft != null)
             Positioned(
               left: _localViewLeft,
               top: _localViewTop,
@@ -332,19 +371,29 @@ class _MeetingScreenState extends State<MeetingScreen> {
               child: GestureDetector(
                 onPanUpdate: (details) {
                   setState(() {
-                    _localViewLeft = (_localViewLeft! + details.delta.dx).clamp(0.0, MediaQuery.of(context).size.width - 120.0);
-                    _localViewTop = (_localViewTop! + details.delta.dy).clamp(0.0, MediaQuery.of(context).size.height - 160.0);
+                    _localViewLeft = (_localViewLeft! + details.delta.dx)
+                        .clamp(0.0, MediaQuery.of(context).size.width - 120.0);
+                    _localViewTop = (_localViewTop! + details.delta.dy)
+                        .clamp(0.0, MediaQuery.of(context).size.height - 160.0);
                   });
                 },
                 child: Container(
                   decoration: BoxDecoration(
                     border: Border.all(color: Colors.white, width: 2.0),
                     borderRadius: BorderRadius.circular(8.0),
-                    boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10.0, offset: Offset(0, 4))],
+                    boxShadow: const [
+                      BoxShadow(
+                          color: Colors.black26,
+                          blurRadius: 10.0,
+                          offset: Offset(0, 4))
+                    ],
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(8.0),
-                    child: RTCVideoView(_localRenderer, mirror: true, objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover),
+                    child: RTCVideoView(_localRenderer,
+                        mirror: true,
+                        objectFit:
+                            RTCVideoViewObjectFit.RTCVideoViewObjectFitCover),
                   ),
                 ),
               ),
@@ -353,7 +402,8 @@ class _MeetingScreenState extends State<MeetingScreen> {
             top: 40.0,
             left: 20.0,
             child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
+              padding:
+                  const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
               decoration: BoxDecoration(
                 color: Colors.black.withOpacity(0.5),
                 borderRadius: BorderRadius.circular(20.0),
@@ -365,13 +415,16 @@ class _MeetingScreenState extends State<MeetingScreen> {
                   const SizedBox(width: 8.0),
                   Text(
                     '$_participantCount',
-                    style: const TextStyle(color: Colors.white, fontSize: 16.0, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16.0,
+                        fontWeight: FontWeight.bold),
                   ),
                 ],
               ),
             ),
           ),
-           Positioned(
+          Positioned(
             bottom: 100.0,
             left: 20,
             right: 20,
@@ -402,19 +455,23 @@ class _MeetingScreenState extends State<MeetingScreen> {
                   heroTag: 'transcript',
                   backgroundColor: _isListening ? Colors.blue : Colors.white,
                   onPressed: _toggleListening,
-                  child: Icon(_isListening ? Icons.mic : Icons.mic_none, color: _isListening ? Colors.white : Colors.black),
+                  child: Icon(_isListening ? Icons.mic : Icons.mic_none,
+                      color: _isListening ? Colors.white : Colors.black),
                 ),
                 FloatingActionButton(
                   heroTag: 'mute',
                   backgroundColor: _isMuted ? Colors.red : Colors.white,
                   onPressed: _toggleMute,
-                  child: Icon(_isMuted ? Icons.mic_off : Icons.mic, color: _isMuted ? Colors.white : Colors.black),
+                  child: Icon(_isMuted ? Icons.mic_off : Icons.mic,
+                      color: _isMuted ? Colors.white : Colors.black),
                 ),
                 FloatingActionButton(
                   heroTag: 'camera',
                   backgroundColor: _isCameraOff ? Colors.red : Colors.white,
                   onPressed: _toggleCamera,
-                  child: Icon(_isCameraOff ? Icons.videocam_off : Icons.videocam, color: _isCameraOff ? Colors.white : Colors.black),
+                  child: Icon(
+                      _isCameraOff ? Icons.videocam_off : Icons.videocam,
+                      color: _isCameraOff ? Colors.white : Colors.black),
                 ),
                 FloatingActionButton(
                   heroTag: 'hangup',
@@ -436,5 +493,6 @@ extension on RTCSessionDescription {
 }
 
 extension on RTCIceCandidate {
-  Map<String, dynamic> toMap() => {'candidate': candidate, 'sdpMid': sdpMid, 'sdpMLineIndex': sdpMLineIndex};
+  Map<String, dynamic> toMap() =>
+      {'candidate': candidate, 'sdpMid': sdpMid, 'sdpMLineIndex': sdpMLineIndex};
 }
