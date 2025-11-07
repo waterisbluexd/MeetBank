@@ -1,23 +1,32 @@
 import 'package:flutter/material.dart';
-import 'package:meetbank/models/meeting.dart';
+import 'package:meetbank/models/Events.dart';
 import 'package:uuid/uuid.dart';
 import 'package:intl/intl.dart';
 
-class CreateMeetingScreen extends StatefulWidget {
-  const CreateMeetingScreen({super.key});
+class CreateEventScreen extends StatefulWidget {
+  const CreateEventScreen({super.key});
 
   @override
-  State<CreateMeetingScreen> createState() => _CreateMeetingScreenState();
+  State<CreateEventScreen> createState() => _CreateEventScreenState();
 }
 
-class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
+class _CreateEventScreenState extends State<CreateEventScreen> {
   final _formKey = GlobalKey<FormState>();
   final titleController = TextEditingController();
   final descriptionController = TextEditingController();
-  final linkController = TextEditingController();
+  final venueController = TextEditingController();
 
   DateTime? startTime;
   DateTime? endTime;
+  String selectedEventType = 'conference';
+
+  final List<Map<String, dynamic>> eventTypes = [
+    {'value': 'conference', 'label': 'Conference', 'icon': Icons.business_center},
+    {'value': 'seminar', 'label': 'Seminar', 'icon': Icons.school},
+    {'value': 'workshop', 'label': 'Workshop', 'icon': Icons.construction},
+    {'value': 'webinar', 'label': 'Webinar', 'icon': Icons.wifi},
+    {'value': 'training', 'label': 'Training', 'icon': Icons.model_training},
+  ];
 
   Future<void> _pickDateTime(bool isStart) async {
     final now = DateTime.now();
@@ -77,7 +86,7 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
     });
   }
 
-  void _saveMeeting() {
+  void _saveEvent() {
     if (!_formKey.currentState!.validate() ||
         startTime == null ||
         endTime == null) {
@@ -90,26 +99,36 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
       return;
     }
 
-    final meeting = Meeting(
+    if (endTime!.isBefore(startTime!)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('End time must be after start time'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
+
+    final event = Event(
       id: const Uuid().v4(),
       title: titleController.text.trim(),
       description: descriptionController.text.trim(),
       startTime: startTime!,
       endTime: endTime!,
-      meetingLink: linkController.text.trim(),
-      linkType: 'google_meet',
-      createdBy: 'admin',
+      venue: venueController.text.trim(),
+      eventType: selectedEventType,
+      organizer: 'admin',
       createdAt: DateTime.now(),
     );
 
-    Navigator.pop(context, meeting);
+    Navigator.pop(context, event);
   }
 
   @override
   void dispose() {
     titleController.dispose();
     descriptionController.dispose();
-    linkController.dispose();
+    venueController.dispose();
     super.dispose();
   }
 
@@ -121,7 +140,7 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
         title: const Text(
-          "Create New Meeting",
+          "Create New Event",
           style: TextStyle(fontWeight: FontWeight.w600),
         ),
         backgroundColor: Colors.white,
@@ -142,9 +161,9 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
                   children: [
                     _buildTextField(
                       controller: titleController,
-                      label: 'Meeting Title',
-                      hint: 'e.g., Team Standup',
-                      icon: Icons.title_rounded,
+                      label: 'Event Title',
+                      hint: 'e.g., Annual Conference 2025',
+                      icon: Icons.event_note,
                       validator: (v) =>
                       v == null || v.isEmpty ? 'Title is required' : null,
                     ),
@@ -152,17 +171,23 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
                     _buildTextField(
                       controller: descriptionController,
                       label: 'Description',
-                      hint: 'What\'s this meeting about?',
+                      hint: 'What\'s this event about?',
                       icon: Icons.description_outlined,
                       maxLines: 4,
+                      validator: (v) =>
+                      v == null || v.isEmpty ? 'Description is required' : null,
                     ),
                     const SizedBox(height: 16),
                     _buildTextField(
-                      controller: linkController,
-                      label: 'Meeting Link',
-                      hint: 'https://meet.google.com/...',
-                      icon: Icons.link_rounded,
+                      controller: venueController,
+                      label: 'Venue',
+                      hint: 'e.g., Main Auditorium, Building A',
+                      icon: Icons.location_on_outlined,
+                      validator: (v) =>
+                      v == null || v.isEmpty ? 'Venue is required' : null,
                     ),
+                    const SizedBox(height: 24),
+                    _buildEventTypeSelector(),
                     const SizedBox(height: 24),
                     _buildDateTimeCard(
                       title: 'Start Time',
@@ -179,7 +204,7 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
                     ),
                     const SizedBox(height: 32),
                     ElevatedButton(
-                      onPressed: _saveMeeting,
+                      onPressed: _saveEvent,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFB993D6),
                         foregroundColor: Colors.white,
@@ -190,7 +215,7 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
                         elevation: 0,
                       ),
                       child: const Text(
-                        "Create Meeting",
+                        "Create Event",
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -260,6 +285,96 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
         ),
         maxLines: maxLines,
         validator: validator,
+      ),
+    );
+  }
+
+  Widget _buildEventTypeSelector() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.category_outlined, color: const Color(0xFFB993D6), size: 20),
+              const SizedBox(width: 8),
+              Text(
+                'Event Type',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: eventTypes.map((type) {
+              final isSelected = selectedEventType == type['value'];
+              return InkWell(
+                onTap: () {
+                  setState(() {
+                    selectedEventType = type['value'] as String;
+                  });
+                },
+                borderRadius: BorderRadius.circular(10),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? const Color(0xFFB993D6).withOpacity(0.15)
+                        : Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: isSelected
+                          ? const Color(0xFFB993D6)
+                          : Colors.transparent,
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        type['icon'] as IconData,
+                        size: 18,
+                        color: isSelected
+                            ? const Color(0xFFB993D6)
+                            : Colors.grey.shade600,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        type['label'] as String,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: isSelected
+                              ? const Color(0xFFB993D6)
+                              : Colors.grey.shade700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
       ),
     );
   }

@@ -5,6 +5,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/foundation.dart';
 import 'package:meetbank/screens/HomePage.dart';
 import 'package:meetbank/screens/LoginPage.dart';
+import 'package:meetbank/screens/create_event_screen.dart';
 import 'package:meetbank/screens/create_meeting_screen.dart';
 
 void main() async {
@@ -51,6 +52,7 @@ class MyApp extends StatelessWidget {
       home: const AuthWrapper(),
       routes: {
         '/create-meeting': (context) => const CreateMeetingScreen(),
+        '/create-event': (context) => const CreateEventScreen(),
       },
     );
   }

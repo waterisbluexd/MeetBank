@@ -10,7 +10,6 @@ class MeetingCard extends StatelessWidget {
   final DateTime endTime;
   final String meetingLink;
   final String linkType;
-  final int attendeesCount;
   final VoidCallback? onTap;
 
   const MeetingCard({
@@ -22,7 +21,6 @@ class MeetingCard extends StatelessWidget {
     required this.endTime,
     required this.meetingLink,
     required this.linkType,
-    this.attendeesCount = 0,
     this.onTap,
   }) : super(key: key);
 
@@ -245,28 +243,6 @@ class MeetingCard extends StatelessWidget {
                 ),
               ],
             ),
-
-            // Attendees count
-            if (attendeesCount > 0) ...[
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Icon(
-                    Icons.people_outline,
-                    size: 16,
-                    color: Colors.grey[600],
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    '$attendeesCount ${attendeesCount == 1 ? 'attendee' : 'attendees'}',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                ],
-              ),
-            ],
           ],
         ),
       ),

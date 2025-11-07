@@ -3,6 +3,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:meetbank/auth_service.dart';
+import 'package:meetbank/screens/events_screen.dart';
 import 'package:meetbank/screens/meetings_screen.dart';
 
 class HomePage extends StatelessWidget {
@@ -105,7 +106,15 @@ class HomePage extends StatelessWidget {
                     _buildMenuItem(
                       icon: Icons.event_note_outlined,
                       title: "Events",
-                      onTap: () {},
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const EventsScreen(),
+                          ),
+                        );
+                      },
                     ),
                     _buildMenuItem(
                       icon: Icons.description_outlined,
@@ -257,7 +266,7 @@ class HomePage extends StatelessWidget {
                   const SizedBox(width: 12),
                   Expanded(
                     child: _buildStatCard(
-                      title: "Attendees",
+                      title: "Meetings",
                       value: "0",
                       subtitle: "+0% engagement",
                       subtitleColor: Colors.grey,
@@ -318,11 +327,6 @@ class HomePage extends StatelessWidget {
                               : index == 1
                               ? "2:00 PM - 3:30 PM"
                               : "9:00 AM - 11:00 AM",
-                          attendees: index == 0
-                              ? "12 attendees"
-                              : index == 1
-                              ? "8 attendees"
-                              : "15 attendees",
                         ),
                       );
                     },
@@ -528,7 +532,6 @@ class HomePage extends StatelessWidget {
     required String title,
     required String date,
     required String time,
-    required String attendees,
   }) {
     return Container(
       padding: const EdgeInsets.all(18),
@@ -601,20 +604,6 @@ class HomePage extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 time,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Colors.grey[600],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Icon(Icons.people, size: 14, color: Colors.grey[600]),
-              const SizedBox(width: 8),
-              Text(
-                attendees,
                 style: TextStyle(
                   fontSize: 13,
                   color: Colors.grey[600],

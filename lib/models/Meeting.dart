@@ -6,7 +6,6 @@ class Meeting {
   final DateTime endTime;
   final String meetingLink;
   final String linkType;
-  final List<String> attendees;
   final String createdBy;
   final DateTime createdAt;
   final String status;
@@ -19,7 +18,6 @@ class Meeting {
     required this.endTime,
     required this.meetingLink,
     required this.linkType,
-    this.attendees = const [],
     required this.createdBy,
     required this.createdAt,
     this.status = 'upcoming',
@@ -34,7 +32,6 @@ class Meeting {
       'endTime': endTime.toIso8601String(),
       'meetingLink': meetingLink,
       'linkType': linkType,
-      'attendees': attendees,
       'createdBy': createdBy,
       'createdAt': createdAt.toIso8601String(),
       'status': status,
@@ -50,7 +47,6 @@ class Meeting {
       endTime: DateTime.parse(map['endTime']),
       meetingLink: map['meetingLink'] ?? '',
       linkType: map['linkType'] ?? 'google_meet',
-      attendees: List<String>.from(map['attendees'] ?? []),
       createdBy: map['createdBy'] ?? '',
       createdAt: DateTime.parse(map['createdAt']),
       status: map['status'] ?? 'upcoming',

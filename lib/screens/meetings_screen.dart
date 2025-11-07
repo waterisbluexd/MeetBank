@@ -176,7 +176,6 @@ class _MeetingsScreenState extends State<MeetingsScreen>
                 endTime: meeting.endTime,
                 meetingLink: meeting.meetingLink,
                 linkType: meeting.linkType,
-                attendeesCount: meeting.attendees.length,
                 onTap: () {
                   Navigator.pushNamed(
                     context,
@@ -207,7 +206,6 @@ class _MeetingsScreenState extends State<MeetingsScreen>
             endTime: meeting.endTime,
             meetingLink: meeting.meetingLink,
             linkType: meeting.linkType,
-            attendeesCount: meeting.attendees.length,
             onTap: () {
               Navigator.pushNamed(
                 context,
@@ -233,7 +231,6 @@ class _MeetingsScreenState extends State<MeetingsScreen>
         endTime: now.add(const Duration(days: 2, hours: 12)),
         meetingLink: 'https://meet.google.com/abc-defg-hij',
         linkType: 'google_meet',
-        attendees: ['a', 'b', 'c'],
         createdBy: 'admin',
         createdAt: now,
       ),
@@ -246,7 +243,6 @@ class _MeetingsScreenState extends State<MeetingsScreen>
         endTime: now.add(const Duration(days: 3, hours: 15, minutes: 30)),
         meetingLink: 'https://zoom.us/j/1234567890',
         linkType: 'zoom',
-        attendees: ['x', 'y'],
         createdBy: 'admin',
         createdAt: now,
       ),
@@ -259,7 +255,6 @@ class _MeetingsScreenState extends State<MeetingsScreen>
         endTime: now.add(const Duration(days: 5, hours: 11)),
         meetingLink: 'https://teams.microsoft.com/l/meetup-join/xyz',
         linkType: 'teams',
-        attendees: ['m', 'n', 'o'],
         createdBy: 'admin',
         createdAt: now,
       ),
@@ -272,7 +267,6 @@ class _MeetingsScreenState extends State<MeetingsScreen>
         endTime: now.subtract(const Duration(days: 2, hours: 11)),
         meetingLink: 'https://meet.google.com/xyz-abcd-efg',
         linkType: 'google_meet',
-        attendees: ['p', 'q'],
         createdBy: 'admin',
         createdAt: now,
         status: 'completed',
