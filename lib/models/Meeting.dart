@@ -13,6 +13,7 @@ class Meeting {
   String status;
   String minutes;
   List<ActionItem> actionItems;
+  String summary;
 
   Meeting({
     required this.id,
@@ -27,6 +28,7 @@ class Meeting {
     this.status = 'upcoming',
     this.minutes = '',
     this.actionItems = const [],
+    this.summary = '',
   });
 
   Map<String, dynamic> toMap() {
@@ -43,6 +45,7 @@ class Meeting {
       'status': status,
       'minutes': minutes,
       'actionItems': actionItems.map((item) => item.toMap()).toList(),
+      'summary': summary,
     };
   }
 
@@ -63,6 +66,7 @@ class Meeting {
           ?.map((item) => ActionItem.fromMap(item))
           .toList() ??
           [],
+      summary: map['summary'] ?? '',
     );
   }
 

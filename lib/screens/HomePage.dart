@@ -21,6 +21,11 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  Future<void> _handleRefresh() async {
+    setState(() {});
+    await Future.delayed(const Duration(seconds: 1));
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser!;
@@ -40,43 +45,46 @@ class _HomePageState extends State<HomePage> {
         iconTheme: const IconThemeData(color: Color(0xFF1A1A2E)),
       ),
       drawer: _buildDrawer(context, user),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Dashboard Header
-              const Text(
-                "Dashboard",
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1A1A2E),
+      body: RefreshIndicator(
+        onRefresh: _handleRefresh,
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Dashboard Header
+                const Text(
+                  "Dashboard",
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1A1A2E),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                "Welcome back! Here's an overview of your institutional records.",
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[600],
+                const SizedBox(height: 6),
+                Text(
+                  "Welcome back! Here's an overview of your institutional records.",
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
-              // Stats Cards
-              _buildStatsGrid(),
-              const SizedBox(height: 28),
+                // Stats Cards
+                _buildStatsGrid(),
+                const SizedBox(height: 28),
 
-              // Upcoming Meetings
-              _buildUpcomingMeetings(),
-              const SizedBox(height: 28),
+                // Upcoming Meetings
+                _buildUpcomingMeetings(),
+                const SizedBox(height: 28),
 
-              // Recent Events
-              _buildRecentEvents(),
-              const SizedBox(height: 20),
-            ],
+                // Recent Events
+                _buildRecentEvents(),
+                const SizedBox(height: 20),
+              ],
+            ),
           ),
         ),
       ),
@@ -157,7 +165,7 @@ class _HomePageState extends State<HomePage> {
                         MaterialPageRoute(
                           builder: (context) => const MeetingsScreen(),
                         ),
-                      );
+                      ).then((_) => setState(() {}));
                     },
                   ),
                   _buildMenuItem(
@@ -219,7 +227,7 @@ class _HomePageState extends State<HomePage> {
                         MaterialPageRoute(
                           builder: (context) => const CreateMeetingScreen(),
                         ),
-                      );
+                      ).then((_) => setState(() {}));
                     },
                   ),
                   _buildQuickAction(
@@ -508,9 +516,8 @@ class _HomePageState extends State<HomePage> {
           child: StreamBuilder<QuerySnapshot>(
             stream: FirebaseFirestore.instance
                 .collection('meetings')
-                .where(
-                'startTime', isGreaterThan: DateTime.now().toIso8601String())
-                .orderBy('startTime')
+                .where('endTime', isGreaterThan: DateTime.now().toIso8601String())
+                .orderBy('endTime')
                 .limit(10)
                 .snapshots(),
             builder: (context, snapshot) {
@@ -524,10 +531,19 @@ class _HomePageState extends State<HomePage> {
                 return const Center(child: Text('No upcoming meetings'));
               }
 
-              final meetings = snapshot.data!.docs
+              var meetings = snapshot.data!.docs
                   .map((doc) =>
                   Meeting.fromMap(doc.data() as Map<String, dynamic>))
                   .toList();
+
+              final now = DateTime.now();
+              meetings.sort((a, b) {
+                final aIsOngoing = a.startTime.isBefore(now) && a.endTime.isAfter(now);
+                final bIsOngoing = b.startTime.isBefore(now) && b.endTime.isAfter(now);
+                if (aIsOngoing && !bIsOngoing) return -1;
+                if (!aIsOngoing && bIsOngoing) return 1;
+                return a.startTime.compareTo(b.startTime);
+              });
 
               return ScrollConfiguration(
                 behavior: const DragScrollBehavior(),
@@ -561,6 +577,8 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildMeetingCard(BuildContext context, {required Meeting meeting}) {
+    final now = DateTime.now();
+    final isOngoing = meeting.startTime.isBefore(now) && meeting.endTime.isAfter(now);
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -598,14 +616,14 @@ class _HomePageState extends State<HomePage> {
                 padding: const EdgeInsets.symmetric(
                     horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF8CA6DB).withOpacity(0.2),
+                  color: (isOngoing ? Colors.green : const Color(0xFF8CA6DB)).withOpacity(0.2),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  meeting.status,
-                  style: const TextStyle(
+                  isOngoing ? 'Ongoing' : meeting.status,
+                  style: TextStyle(
                     fontSize: 11,
-                    color: Color(0xFF8CA6DB),
+                    color: isOngoing ? Colors.green : const Color(0xFF8CA6DB),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -650,7 +668,7 @@ class _HomePageState extends State<HomePage> {
                   MaterialPageRoute(
                     builder: (context) => const MeetingsScreen(),
                   ),
-                );
+                ).then((_) => setState(() {}));
               },
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 12),

@@ -12,6 +12,7 @@ class MeetingCard extends StatelessWidget {
   final String linkType;
   final VoidCallback? onTap;
   final VoidCallback? onDelete;
+  final VoidCallback? onEdit;
 
   const MeetingCard({
     Key? key,
@@ -24,10 +25,13 @@ class MeetingCard extends StatelessWidget {
     required this.linkType,
     this.onTap,
     this.onDelete,
+    this.onEdit,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final isCompleted = DateTime.now().isAfter(endTime);
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -131,118 +135,124 @@ class MeetingCard extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 16),
-
-            // Meeting Link Section
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: _getLinkColor().withOpacity(0.1),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: _getLinkColor().withOpacity(0.3),
-                  width: 1,
+            if (!isCompleted) ...[
+              const SizedBox(height: 16),
+              // Meeting Link Section
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: _getLinkColor().withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: _getLinkColor().withOpacity(0.3),
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: _getLinkColor().withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Icon(
+                        _getLinkIcon(),
+                        size: 18,
+                        color: _getLinkColor(),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _getLinkTypeText(),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            _getTruncatedLink(),
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: _getLinkColor(),
+                              fontWeight: FontWeight.w600,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => _copyLink(context),
+                      icon: Icon(
+                        Icons.copy,
+                        size: 18,
+                        color: Colors.grey[600],
+                      ),
+                      tooltip: 'Copy link',
+                    ),
+                  ],
                 ),
               ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: _getLinkColor().withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Icon(
-                      _getLinkIcon(),
-                      size: 18,
-                      color: _getLinkColor(),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _getLinkTypeText(),
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[600],
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          _getTruncatedLink(),
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: _getLinkColor(),
-                            fontWeight: FontWeight.w600,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () => _copyLink(context),
-                    icon: Icon(
-                      Icons.copy,
-                      size: 18,
-                      color: Colors.grey[600],
-                    ),
-                    tooltip: 'Copy link',
-                  ),
-                ],
-              ),
-            ),
+            ],
             const SizedBox(height: 16),
 
             // Action Buttons
             Row(
               children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () => _launchMeetingLink(context),
-                    icon: const Icon(Icons.video_call, size: 18),
-                    label: const Text(
-                      'Join Meeting',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
+                if (!isCompleted)
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () => _launchMeetingLink(context),
+                      icon: const Icon(Icons.video_call, size: 18),
+                      label: const Text(
+                        'Join Meeting',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFB993D6),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                       ),
                     ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFB993D6),
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                  ),
+                if (isCompleted)
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: onEdit,
+                      icon: const Icon(Icons.edit, size: 18),
+                      label: const Text(
+                        'Add Summary',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 12,
+                        ),
+                        side: BorderSide(color: Colors.grey[300]!),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 10),
-                OutlinedButton(
-                  onPressed: onTap,
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    side: BorderSide(color: Colors.grey[300]!),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  child: const Icon(
-                    Icons.info_outline,
-                    size: 20,
-                    color: Color(0xFF1A1A2E),
-                  ),
-                ),
                 const SizedBox(width: 10),
                 OutlinedButton(
                   onPressed: () => _showDeleteConfirmationDialog(context),

@@ -4,6 +4,7 @@ import 'package:meetbank/screens/cards/meeting_card.dart';
 import 'package:meetbank/models/Meeting.dart';
 import 'package:meetbank/screens/create_meeting_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:meetbank/screens/add_summary_screen.dart';
 
 class MeetingsScreen extends StatefulWidget {
   const MeetingsScreen({Key? key}) : super(key: key);
@@ -15,16 +16,24 @@ class MeetingsScreen extends StatefulWidget {
 class _MeetingsScreenState extends State<MeetingsScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 2, vsync: this);
+    _searchController.addListener(() {
+      setState(() {
+        _searchQuery = _searchController.text;
+      });
+    });
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -47,6 +56,15 @@ class _MeetingsScreenState extends State<MeetingsScreen>
     }
   }
 
+  void _editMeetingSummary(Meeting meeting) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AddSummaryScreen(meeting: meeting),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -63,30 +81,49 @@ class _MeetingsScreenState extends State<MeetingsScreen>
         elevation: 0,
         iconTheme: const IconThemeData(color: Color(0xFF1A1A2E)),
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(50),
+          preferredSize: const Size.fromHeight(100),
           child: Container(
             color: Colors.white,
-            child: TabBar(
-              controller: _tabController,
-              labelColor: const Color(0xFFB993D6),
-              unselectedLabelColor: Colors.grey[600],
-              indicatorColor: const Color(0xFFB993D6),
-              indicatorWeight: 3,
-              labelStyle: const TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
-              ),
-              tabs: const [
-                Tab(text: "Upcoming"),
-                Tab(text: "Completed"),
-                Tab(text: "All"),
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: 'Search meetings...',
+                      prefixIcon: const Icon(Icons.search),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide.none,
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey[100],
+                    ),
+                  ),
+                ),
+                TabBar(
+                  controller: _tabController,
+                  labelColor: const Color(0xFFB993D6),
+                  unselectedLabelColor: Colors.grey[600],
+                  indicatorColor: const Color(0xFFB993D6),
+                  indicatorWeight: 3,
+                  labelStyle: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                  tabs: const [
+                    Tab(text: "Upcoming"),
+                    Tab(text: "Completed"),
+                  ],
+                ),
               ],
             ),
           ),
         ),
       ),
       body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance.collection('meetings').snapshots(),
+        stream: FirebaseFirestore.instance.collection('meetings').orderBy('startTime', descending: false).snapshots(),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             return const Center(child: Text('Something went wrong'));
@@ -104,7 +141,6 @@ class _MeetingsScreenState extends State<MeetingsScreen>
             children: [
               _buildMeetingsList(meetings, "upcoming"),
               _buildMeetingsList(meetings, "completed"),
-              _buildMeetingsList(meetings, "all"),
             ],
           );
         },
@@ -128,23 +164,26 @@ class _MeetingsScreenState extends State<MeetingsScreen>
     List<Meeting> filtered = [];
 
     if (filter == "upcoming") {
-      filtered = meetings.where((m) => m.startTime.isAfter(now)).toList();
+      filtered = meetings.where((m) => m.endTime.isAfter(now)).toList();
     } else if (filter == "completed") {
       filtered = meetings.where((m) => m.endTime.isBefore(now)).toList();
-    } else {
-      filtered = meetings;
     }
 
-    if (filter == "all") {
-      final upcoming = filtered.where((m) => m.startTime.isAfter(now)).toList();
-      final completed = filtered.where((m) => m.endTime.isBefore(now)).toList();
+    if (_searchQuery.isNotEmpty) {
+      filtered = filtered
+          .where((m) => m.title.toLowerCase().contains(_searchQuery.toLowerCase()))
+          .toList();
+    }
 
-      upcoming.sort((a, b) => a.startTime.compareTo(b.startTime));
-      completed.sort((a, b) => b.startTime.compareTo(a.startTime));
-
-      filtered = [...upcoming, ...completed];
-    } else {
-      filtered.sort((a, b) => a.startTime.compareTo(b.startTime));
+    // Sort upcoming meetings with ongoing at the top
+    if (filter == "upcoming") {
+      filtered.sort((a, b) {
+        final aIsOngoing = a.startTime.isBefore(now) && a.endTime.isAfter(now);
+        final bIsOngoing = b.startTime.isBefore(now) && b.endTime.isAfter(now);
+        if (aIsOngoing && !bIsOngoing) return -1;
+        if (!aIsOngoing && bIsOngoing) return 1;
+        return a.startTime.compareTo(b.startTime);
+      });
     }
 
     if (filtered.isEmpty) {
@@ -155,7 +194,7 @@ class _MeetingsScreenState extends State<MeetingsScreen>
             Icon(Icons.event_busy_outlined, size: 80, color: Colors.grey[400]),
             const SizedBox(height: 16),
             Text(
-              "No meetings found",
+              _searchQuery.isEmpty ? "No meetings found" : "No meetings match your search",
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -198,6 +237,7 @@ class _MeetingsScreenState extends State<MeetingsScreen>
                 linkType: meeting.linkType,
                 onTap: () {},
                 onDelete: () => _deleteMeeting(meeting.id),
+                onEdit: () => _editMeetingSummary(meeting),
               );
             },
           );
@@ -222,6 +262,7 @@ class _MeetingsScreenState extends State<MeetingsScreen>
             linkType: meeting.linkType,
             onTap: () {},
             onDelete: () => _deleteMeeting(meeting.id),
+            onEdit: () => _editMeetingSummary(meeting),
           ),
         );
       },
