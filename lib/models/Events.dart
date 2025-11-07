@@ -3,24 +3,24 @@ class Event {
   final String title;
   final String description;
   final DateTime startTime;
-  final DateTime endTime;
   final String venue;
   final String eventType; // conference, seminar, workshop, etc.
   final String organizer;
   final DateTime createdAt;
   final String status;
+  final String? documentUrl;
 
   Event({
     required this.id,
     required this.title,
     required this.description,
     required this.startTime,
-    required this.endTime,
     required this.venue,
     required this.eventType,
     required this.organizer,
     required this.createdAt,
     this.status = 'upcoming',
+    this.documentUrl,
   });
 
   Map<String, dynamic> toMap() {
@@ -29,12 +29,12 @@ class Event {
       'title': title,
       'description': description,
       'startTime': startTime.toIso8601String(),
-      'endTime': endTime.toIso8601String(),
       'venue': venue,
       'eventType': eventType,
       'organizer': organizer,
       'createdAt': createdAt.toIso8601String(),
       'status': status,
+      'documentUrl': documentUrl,
     };
   }
 
@@ -44,12 +44,12 @@ class Event {
       title: map['title'] ?? '',
       description: map['description'] ?? '',
       startTime: DateTime.parse(map['startTime']),
-      endTime: DateTime.parse(map['endTime']),
       venue: map['venue'] ?? '',
       eventType: map['eventType'] ?? 'conference',
       organizer: map['organizer'] ?? '',
       createdAt: DateTime.parse(map['createdAt']),
       status: map['status'] ?? 'upcoming',
+      documentUrl: map['documentUrl'],
     );
   }
 
@@ -68,11 +68,7 @@ class Event {
       final period = time.hour >= 12 ? 'PM' : 'AM';
       return '$hour:$minute $period';
     }
-    return '${formatTime(startTime)} - ${formatTime(endTime)}';
-  }
-
-  int getDurationInHours() {
-    return endTime.difference(startTime).inHours;
+    return formatTime(startTime);
   }
 
   String getEventTypeLabel() {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:meetbank/models/Events.dart';
 import 'package:uuid/uuid.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class EventsScreen extends StatefulWidget {
   const EventsScreen({Key? key}) : super(key: key);
@@ -305,6 +306,36 @@ class _EventsScreenState extends State<EventsScreen> {
                 ],
               ),
             ),
+            if (event.documentUrl != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 16.0),
+                child: OutlinedButton.icon(
+                  onPressed: () async {
+                    if (event.documentUrl != null) {
+                      final uri = Uri.parse(event.documentUrl!);
+                      if (await canLaunchUrl(uri)) {
+                        await launchUrl(uri);
+                      }
+                    }
+                  },
+                  icon: const Icon(Icons.attach_file, size: 16),
+                  label: const Text(
+                    "View Document",
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    side: BorderSide(color: Colors.grey[300]!),
+                    foregroundColor: const Color(0xFF1A1A2E),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+              ),
             const SizedBox(height: 14),
             SizedBox(
               width: double.infinity,
@@ -344,11 +375,11 @@ class _EventsScreenState extends State<EventsScreen> {
         description:
         'Join us for our flagship annual conference featuring keynote speakers, panel discussions, and networking opportunities with industry leaders.',
         startTime: now.add(const Duration(days: 15)),
-        endTime: now.add(const Duration(days: 15, hours: 8)),
         venue: 'Main Convention Center, Hall A',
         eventType: 'conference',
         organizer: 'admin',
         createdAt: now,
+        documentUrl: 'https://example.com/document.pdf',
       ),
       Event(
         id: const Uuid().v4(),
@@ -356,7 +387,6 @@ class _EventsScreenState extends State<EventsScreen> {
         description:
         'An intensive workshop focused on developing leadership skills, team management, and strategic thinking for middle and senior management.',
         startTime: now.add(const Duration(days: 7)),
-        endTime: now.add(const Duration(days: 7, hours: 6)),
         venue: 'Training Room 3, Building B',
         eventType: 'workshop',
         organizer: 'admin',
@@ -368,7 +398,6 @@ class _EventsScreenState extends State<EventsScreen> {
         description:
         'Explore the latest trends in digital transformation, including AI, cloud computing, and data analytics for modern organizations.',
         startTime: now.add(const Duration(days: 20)),
-        endTime: now.add(const Duration(days: 20, hours: 4)),
         venue: 'Auditorium 2',
         eventType: 'seminar',
         organizer: 'admin',
@@ -380,11 +409,11 @@ class _EventsScreenState extends State<EventsScreen> {
         description:
         'Learn about the latest cybersecurity threats and best practices to protect your organization in the digital age.',
         startTime: now.add(const Duration(days: 3)),
-        endTime: now.add(const Duration(days: 3, hours: 2)),
         venue: 'Online (Zoom)',
         eventType: 'webinar',
         organizer: 'admin',
         createdAt: now,
+        documentUrl: 'https://example.com/document.pdf',
       ),
       Event(
         id: const Uuid().v4(),
@@ -392,7 +421,6 @@ class _EventsScreenState extends State<EventsScreen> {
         description:
         'Annual general meeting to review the past year\'s performance, discuss strategic initiatives, and vote on important organizational matters.',
         startTime: now.subtract(const Duration(days: 30)),
-        endTime: now.subtract(const Duration(days: 30, hours: -4)),
         venue: 'Board Room, Executive Floor',
         eventType: 'conference',
         organizer: 'admin',

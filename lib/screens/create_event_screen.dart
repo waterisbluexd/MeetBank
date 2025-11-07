@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:meetbank/models/Events.dart';
 import 'package:uuid/uuid.dart';
 import 'package:intl/intl.dart';
+import 'package:file_picker/file_picker.dart';
 
 class CreateEventScreen extends StatefulWidget {
   const CreateEventScreen({super.key});
@@ -15,9 +16,9 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   final titleController = TextEditingController();
   final descriptionController = TextEditingController();
   final venueController = TextEditingController();
+  String? documentUrl;
 
   DateTime? startTime;
-  DateTime? endTime;
   String selectedEventType = 'conference';
 
   final List<Map<String, dynamic>> eventTypes = [
@@ -28,7 +29,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     {'value': 'training', 'label': 'Training', 'icon': Icons.model_training},
   ];
 
-  Future<void> _pickDateTime(bool isStart) async {
+  Future<void> _pickDateTime() async {
     final now = DateTime.now();
     final pickedDate = await showDatePicker(
       context: context,
@@ -78,31 +79,24 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     );
 
     setState(() {
-      if (isStart) {
-        startTime = dateTime;
-      } else {
-        endTime = dateTime;
-      }
+      startTime = dateTime;
     });
   }
 
+  Future<void> _pickDocument() async {
+    final result = await FilePicker.platform.pickFiles();
+    if (result != null) {
+      setState(() {
+        documentUrl = result.files.single.path;
+      });
+    }
+  }
+
   void _saveEvent() {
-    if (!_formKey.currentState!.validate() ||
-        startTime == null ||
-        endTime == null) {
+    if (!_formKey.currentState!.validate() || startTime == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please fill all required fields'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
-      return;
-    }
-
-    if (endTime!.isBefore(startTime!)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('End time must be after start time'),
           backgroundColor: Colors.redAccent,
         ),
       );
@@ -114,11 +108,11 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
       title: titleController.text.trim(),
       description: descriptionController.text.trim(),
       startTime: startTime!,
-      endTime: endTime!,
       venue: venueController.text.trim(),
       eventType: selectedEventType,
       organizer: 'admin',
       createdAt: DateTime.now(),
+      documentUrl: documentUrl,
     );
 
     Navigator.pop(context, event);
@@ -193,15 +187,10 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                       title: 'Start Time',
                       dateTime: startTime,
                       icon: Icons.calendar_today_rounded,
-                      onTap: () => _pickDateTime(true),
+                      onTap: _pickDateTime,
                     ),
-                    const SizedBox(height: 12),
-                    _buildDateTimeCard(
-                      title: 'End Time',
-                      dateTime: endTime,
-                      icon: Icons.event_available_rounded,
-                      onTap: () => _pickDateTime(false),
-                    ),
+                    const SizedBox(height: 16),
+                    _buildDocumentPicker(),
                     const SizedBox(height: 32),
                     ElevatedButton(
                       onPressed: _saveEvent,
@@ -448,6 +437,67 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                     ),
                   ),
                 ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: Colors.grey.shade400,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDocumentPicker() {
+    return InkWell(
+      onTap: _pickDocument,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: documentUrl != null
+                ? const Color(0xFFB993D6).withOpacity(0.3)
+                : Colors.grey.shade200,
+            width: 1.5,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFB993D6).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                Icons.attach_file,
+                color: Color(0xFFB993D6),
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                documentUrl ?? 'Attach a document',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: documentUrl != null
+                      ? const Color(0xFF1A1A2E)
+                      : Colors.grey.shade400,
+                ),
+                overflow: TextOverflow.ellipsis,
               ),
             ),
             Icon(
