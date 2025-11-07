@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:meetbank/models/Policies.dart';
 import 'package:meetbank/screens/create_policies_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class PoliciesScreen extends StatefulWidget {
   const PoliciesScreen({super.key});
@@ -10,15 +11,17 @@ class PoliciesScreen extends StatefulWidget {
 }
 
 class _PoliciesScreenState extends State<PoliciesScreen> {
-  final List<Policy> _policies = [];
-  List<Policy> _filteredPolicies = [];
   final _searchController = TextEditingController();
+  String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
-    _filteredPolicies = _policies;
-    _searchController.addListener(_filterPolicies);
+    _searchController.addListener(() {
+      setState(() {
+        _searchQuery = _searchController.text.toLowerCase();
+      });
+    });
   }
 
   @override
@@ -27,27 +30,11 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
     super.dispose();
   }
 
-  void _filterPolicies() {
-    final query = _searchController.text.toLowerCase();
-    setState(() {
-      _filteredPolicies = _policies.where((policy) {
-        return policy.title.toLowerCase().contains(query);
-      }).toList();
-    });
-  }
-
-  void _navigateAndAddPolicy() async {
-    final newPolicy = await Navigator.push<Policy>(
+  void _navigateAndAddPolicy() {
+    Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const CreatePolicyScreen()),
     );
-
-    if (newPolicy != null) {
-      setState(() {
-        _policies.add(newPolicy);
-        _filterPolicies();
-      });
-    }
   }
 
   @override
@@ -70,9 +57,31 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
         children: [
           _buildSearchField(),
           Expanded(
-            child: _filteredPolicies.isEmpty
-                ? _buildEmptyState()
-                : _buildPolicyList(),
+            child: StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance.collection('policies').snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return const Center(child: Text('Something went wrong'));
+                }
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                final policies = snapshot.data!.docs
+                    .map((doc) => Policy.fromMap(doc.data() as Map<String, dynamic>))
+                    .toList();
+
+                final filteredPolicies = policies.where((policy) {
+                  return policy.title.toLowerCase().contains(_searchQuery);
+                }).toList();
+
+                if (filteredPolicies.isEmpty) {
+                  return _buildEmptyState();
+                } else {
+                  return _buildPolicyList(filteredPolicies);
+                }
+              },
+            ),
           ),
         ],
       ),
@@ -94,11 +103,11 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
           prefixIcon: const Icon(Icons.search),
           suffixIcon: _searchController.text.isNotEmpty
               ? IconButton(
-                  icon: const Icon(Icons.clear),
-                  onPressed: () {
-                    _searchController.clear();
-                  },
-                )
+            icon: const Icon(Icons.clear),
+            onPressed: () {
+              _searchController.clear();
+            },
+          )
               : null,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
@@ -119,7 +128,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            _searchController.text.isEmpty
+            _searchQuery.isEmpty
                 ? Icons.description_outlined
                 : Icons.search_off,
             size: 80,
@@ -127,7 +136,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
           ),
           const SizedBox(height: 20),
           Text(
-            _searchController.text.isEmpty ? 'No Policies Found' : 'No Results Found',
+            _searchQuery.isEmpty ? 'No Policies Found' : 'No Results Found',
             style: const TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
@@ -136,7 +145,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            _searchController.text.isEmpty
+            _searchQuery.isEmpty
                 ? 'Tap the + button to create your first policy.'
                 : 'Try a different search term.',
             textAlign: TextAlign.center,
@@ -150,12 +159,12 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
     );
   }
 
-  Widget _buildPolicyList() {
+  Widget _buildPolicyList(List<Policy> policies) {
     return ListView.builder(
       padding: const EdgeInsets.all(12),
-      itemCount: _filteredPolicies.length,
+      itemCount: policies.length,
       itemBuilder: (context, index) {
-        final policy = _filteredPolicies[index];
+        final policy = policies[index];
         return _buildPolicyCard(policy);
       },
     );
@@ -273,7 +282,7 @@ class _PoliciesScreenState extends State<PoliciesScreen> {
     );
   }
 
-   Widget _buildInfoChip(String label, IconData icon, Color color) {
+  Widget _buildInfoChip(String label, IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(

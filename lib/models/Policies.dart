@@ -18,6 +18,7 @@ class Policy {
   final String? previousVersionId;
   final DateTime? nextReviewDate;
   final String? audience;
+  final String createdBy;
 
   Policy({
     required this.id,
@@ -39,6 +40,7 @@ class Policy {
     this.previousVersionId,
     this.nextReviewDate,
     this.audience,
+    required this.createdBy,
   });
 
   Map<String, dynamic> toMap() {
@@ -62,6 +64,7 @@ class Policy {
       'previousVersionId': previousVersionId,
       'nextReviewDate': nextReviewDate?.toIso8601String(),
       'audience': audience,
+      'createdBy': createdBy,
     };
   }
 
@@ -86,6 +89,7 @@ class Policy {
       previousVersionId: map['previousVersionId'],
       nextReviewDate: map['nextReviewDate'] != null ? DateTime.parse(map['nextReviewDate']) : null,
       audience: map['audience'],
+      createdBy: map['createdBy'] ?? '',
     );
   }
 
@@ -174,6 +178,7 @@ class Policy {
     String? previousVersionId,
     DateTime? nextReviewDate,
     String? audience,
+    String? createdBy,
   }) {
     return Policy(
       id: id ?? this.id,
@@ -195,6 +200,7 @@ class Policy {
       previousVersionId: previousVersionId ?? this.previousVersionId,
       nextReviewDate: nextReviewDate ?? this.nextReviewDate,
       audience: audience ?? this.audience,
+      createdBy: createdBy ?? this.createdBy,
     );
   }
 }

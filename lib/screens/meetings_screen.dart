@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:meetbank/models/Meeting.dart';
 import 'package:meetbank/screens/create_meeting_screen.dart';
 import 'package:meetbank/screens/meeting_details_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class MeetingsScreen extends StatefulWidget {
   const MeetingsScreen({super.key});
@@ -11,19 +12,11 @@ class MeetingsScreen extends StatefulWidget {
 }
 
 class _MeetingsScreenState extends State<MeetingsScreen> {
-  final List<Meeting> _meetings = [];
-
-  void _navigateAndAddMeeting() async {
-    final newMeeting = await Navigator.push<Meeting>(
+  void _navigateAndAddMeeting() {
+    Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const CreateMeetingScreen()),
     );
-
-    if (newMeeting != null) {
-      setState(() {
-        _meetings.add(newMeeting);
-      });
-    }
   }
 
   void _navigateToMeetingDetails(Meeting meeting) async {
@@ -35,12 +28,10 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
     );
 
     if (updatedMeeting != null) {
-      setState(() {
-        final index = _meetings.indexWhere((m) => m.id == updatedMeeting.id);
-        if (index != -1) {
-          _meetings[index] = updatedMeeting;
-        }
-      });
+      await FirebaseFirestore.instance
+          .collection('meetings')
+          .doc(updatedMeeting.id)
+          .update(updatedMeeting.toMap());
     }
   }
 
@@ -60,9 +51,28 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
         elevation: 0,
         iconTheme: const IconThemeData(color: Color(0xFF1A1A2E)),
       ),
-      body: _meetings.isEmpty
-          ? _buildEmptyState()
-          : _buildMeetingList(),
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance.collection('meetings').snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return const Center(child: Text('Something went wrong'));
+          }
+
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          final meetings = snapshot.data!.docs
+              .map((doc) => Meeting.fromMap(doc.data() as Map<String, dynamic>))
+              .toList();
+
+          if (meetings.isEmpty) {
+            return _buildEmptyState();
+          } else {
+            return _buildMeetingList(meetings);
+          }
+        },
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: _navigateAndAddMeeting,
         backgroundColor: const Color(0xFFB993D6),
@@ -104,12 +114,12 @@ class _MeetingsScreenState extends State<MeetingsScreen> {
     );
   }
 
-  Widget _buildMeetingList() {
+  Widget _buildMeetingList(List<Meeting> meetings) {
     return ListView.builder(
       padding: const EdgeInsets.all(12),
-      itemCount: _meetings.length,
+      itemCount: meetings.length,
       itemBuilder: (context, index) {
-        final meeting = _meetings[index];
+        final meeting = meetings[index];
         return _buildMeetingCard(meeting);
       },
     );

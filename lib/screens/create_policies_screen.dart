@@ -4,6 +4,8 @@ import 'package:meetbank/models/Policies.dart';
 import 'package:uuid/uuid.dart';
 import 'package:intl/intl.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class CreatePolicyScreen extends StatefulWidget {
   const CreatePolicyScreen({super.key});
@@ -30,6 +32,8 @@ class _CreatePolicyScreenState extends State<CreatePolicyScreen> {
   String selectedStatus = 'draft';
   List<String> tags = [];
   final tagController = TextEditingController();
+  bool _isSaving = false;
+
 
   final List<Map<String, dynamic>> categories = [
     {'value': 'hr', 'label': 'Human Resources', 'icon': Icons.people},
@@ -108,7 +112,7 @@ class _CreatePolicyScreenState extends State<CreatePolicyScreen> {
     }
   }
 
-  void _savePolicy() {
+  Future<void> _savePolicy() async {
     if (!_formKey.currentState!.validate() || effectiveDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -129,30 +133,77 @@ class _CreatePolicyScreenState extends State<CreatePolicyScreen> {
       return;
     }
 
-    final policy = Policy(
-        id: const Uuid().v4(),
-        title: titleController.text.trim(),
-        description: descriptionController.text.trim(),
-        category: selectedCategory,
-        version: versionController.text.trim(),
-        effectiveDate: effectiveDate!,
-        expiryDate: expiryDate,
-        status: selectedStatus,
-        documentUrl: documentUrlController.text.trim(),
-        localDocumentPath: localDocumentPath,
-        approvedBy: approvedByController.text.trim().isEmpty
-            ? 'Pending'
-            : approvedByController.text.trim(),
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-        tags: tags,
-        department: departmentController.text.trim(),
-        revisionNumber: 1,
-        nextReviewDate: nextReviewDate,
-        audience: audienceController.text.trim());
+    setState(() {
+      _isSaving = true;
+    });
 
-    Navigator.pop(context, policy);
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('You must be logged in to create a policy.'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      setState(() {
+        _isSaving = false;
+      });
+      return;
+    }
+
+
+    final policy = Policy(
+      id: const Uuid().v4(),
+      title: titleController.text.trim(),
+      description: descriptionController.text.trim(),
+      category: selectedCategory,
+      version: versionController.text.trim(),
+      effectiveDate: effectiveDate!,
+      expiryDate: expiryDate,
+      status: selectedStatus,
+      documentUrl: documentUrlController.text.trim(),
+      localDocumentPath: localDocumentPath,
+      approvedBy: approvedByController.text.trim().isEmpty
+          ? 'Pending'
+          : approvedByController.text.trim(),
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+      tags: tags,
+      department: departmentController.text.trim(),
+      revisionNumber: 1,
+      nextReviewDate: nextReviewDate,
+      audience: audienceController.text.trim(),
+      createdBy: user.uid, // Tagging the policy with the user's ID
+    );
+
+    try {
+      await FirebaseFirestore.instance
+          .collection('policies')
+          .doc(policy.id)
+          .set(policy.toMap());
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Policy created successfully!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      Navigator.pop(context);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to save policy: $e'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    } finally {
+      setState(() {
+        _isSaving = false;
+      });
+    }
   }
+
 
   @override
   void dispose() {
@@ -295,8 +346,8 @@ class _CreatePolicyScreenState extends State<CreatePolicyScreen> {
                     const SizedBox(height: 24),
                     _buildTagsSection(),
                     const SizedBox(height: 32),
-                    ElevatedButton(
-                      onPressed: _savePolicy,
+                     ElevatedButton(
+                      onPressed: _isSaving ? null : _savePolicy,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFB993D6),
                         foregroundColor: Colors.white,
@@ -306,7 +357,16 @@ class _CreatePolicyScreenState extends State<CreatePolicyScreen> {
                         ),
                         elevation: 0,
                       ),
-                      child: const Text(
+                      child: _isSaving
+                          ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 3,
+                        ),
+                      )
+                          : const Text(
                         "Create Policy",
                         style: TextStyle(
                           fontSize: 16,
@@ -728,7 +788,7 @@ class _CreatePolicyScreenState extends State<CreatePolicyScreen> {
                       ? const Color(0xFF1A1A2E)
                       : Colors.grey.shade400,
                 ),
-                overflow: TextOverflow.ellipsis,
+                overflow: TextOverflow.ellipsis,              
               ),
             ),
             Icon(

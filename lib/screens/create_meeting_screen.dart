@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:meetbank/models/meeting.dart';
 import 'package:uuid/uuid.dart';
 import 'package:intl/intl.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class CreateMeetingScreen extends StatefulWidget {
   const CreateMeetingScreen({super.key});
@@ -18,6 +20,7 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
 
   DateTime? startTime;
   DateTime? endTime;
+  bool _isSaving = false;
 
   Future<void> _pickDateTime(bool isStart) async {
     final now = DateTime.now();
@@ -77,7 +80,7 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
     });
   }
 
-  void _saveMeeting() {
+  Future<void> _saveMeeting() async {
     if (!_formKey.currentState!.validate() ||
         startTime == null ||
         endTime == null) {
@@ -90,6 +93,24 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
       return;
     }
 
+    setState(() {
+      _isSaving = true;
+    });
+
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('You must be logged in to create a meeting.'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      setState(() {
+        _isSaving = false;
+      });
+      return;
+    }
+
     final meeting = Meeting(
       id: const Uuid().v4(),
       title: titleController.text.trim(),
@@ -98,11 +119,36 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
       endTime: endTime!,
       meetingLink: linkController.text.trim(),
       linkType: 'google_meet',
-      createdBy: 'admin',
+      createdBy: user.uid,
       createdAt: DateTime.now(),
     );
 
-    Navigator.pop(context, meeting);
+    try {
+      await FirebaseFirestore.instance
+          .collection('meetings')
+          .doc(meeting.id)
+          .set(meeting.toMap());
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Meeting created successfully!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      Navigator.pop(context);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to save meeting: $e'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    } finally {
+      setState(() {
+        _isSaving = false;
+      });
+    }
   }
 
   @override
@@ -179,7 +225,7 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
                     ),
                     const SizedBox(height: 32),
                     ElevatedButton(
-                      onPressed: _saveMeeting,
+                      onPressed: _isSaving ? null : _saveMeeting,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFB993D6),
                         foregroundColor: Colors.white,
@@ -189,7 +235,16 @@ class _CreateMeetingScreenState extends State<CreateMeetingScreen> {
                         ),
                         elevation: 0,
                       ),
-                      child: const Text(
+                      child: _isSaving
+                          ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 3,
+                        ),
+                      )
+                          : const Text(
                         "Create Meeting",
                         style: TextStyle(
                           fontSize: 16,
