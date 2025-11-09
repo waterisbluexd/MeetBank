@@ -43,30 +43,23 @@ class _AddSummaryScreenState extends State<AddSummaryScreen> {
         model: 'gemini-2.5-flash',
         apiKey: googleApiKey,
       );
-
-      final bool useDescription = _summaryController.text.trim().isEmpty;
-      final String sourceText =
-          useDescription ? widget.meeting.description : _summaryController.text;
-      final String sourceLabel =
-          useDescription ? 'meeting description' : 'user notes';
-
       final prompt =
-          '''Based on the following $sourceLabel, create a concise summary with 5-6 bullet points and also provide 5 to 7 relevant keywords separated by commas.
+          '''Based on the following meeting description and user notes, create a concise summary in bullet points and also provide 5 to 7 relevant keywords separated by commas. 
 
-$sourceLabel:
-$sourceText
+Meeting Description:
+${widget.meeting.description}
+
+User Notes:
+${_summaryController.text}
 
 Return ONLY the summary and keywords in the following format:
 
 Summary:
 * Bullet point 1
 * Bullet point 2
-* Bullet point 3
-* Bullet point 4
-* Bullet point 5
 
 Keywords:
-keyword1, keyword2, keyword3, keyword4, keyword5''';
+keyword1, keyword2, keyword3''';
       final content = [Content.text(prompt)];
       final response = await model.generateContent(content);
 
