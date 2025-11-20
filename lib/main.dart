@@ -8,6 +8,8 @@ import 'package:meetbank/screens/LoginPage.dart';
 import 'package:meetbank/screens/create_event_screen.dart';
 import 'package:meetbank/screens/create_meeting_screen.dart';
 
+//added
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
